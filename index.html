@@ -28,8 +28,11 @@
     
     <!-- FontAwesome 6 CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- html2pdf.js Bundle CDN -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <!-- Direct Vector PDF Engine CDNs (jsPDF & AutoTable) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
     <!-- Canvas Confetti CDN -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
@@ -78,7 +81,6 @@
 </head>
 <body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-full flex flex-col transition-colors duration-200 antialiased selection:bg-blue-500 selection:text-white pb-12">
 
-    <!-- Top Navigation Header -->
     <header class="sticky top-0 z-30 bg-lowes-navy dark:bg-slate-950 text-white shadow-lg border-b border-blue-900/50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div class="flex items-center space-x-3">
@@ -116,7 +118,6 @@
         </div>
     </header>
 
-    <!-- Main Content Layout -->
     <main class="max-w-5xl mx-auto px-3 sm:px-6 pt-4 sm:pt-6 flex-1 w-full">
 
         <form id="qc-form" onsubmit="handleFormSubmit(event)" class="space-y-6">
@@ -162,7 +163,7 @@
                             <input type="text" id="so-number" required placeholder="e.g. SO12345" 
                                 class="w-full pl-9 pr-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-lowes-accent focus:border-transparent text-sm uppercase transition-all">
                         </div>
-                        <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-1">Used for PDF format: SO_Tester.pdf</p>
+                        <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-1">PDF Format: [SO Number]_[Technician Name].pdf</p>
                     </div>
 
                     <!-- Unit / Serial Number -->
@@ -276,7 +277,7 @@
             <!-- Form Action Footer -->
             <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
                 <p class="text-xs text-slate-500 dark:text-slate-400 text-center sm:text-left">
-                    Generates single-page PDF: <strong class="text-slate-700 dark:text-slate-200">[SO_Number]_[Tester_Name].pdf</strong>
+                    Vector PDF Output: <strong class="text-slate-700 dark:text-slate-200">[SO_Number]_[Technician_Name].pdf</strong>
                 </p>
 
                 <div class="flex items-center gap-3 w-full sm:w-auto">
@@ -698,7 +699,6 @@
             adminDraftItems.push(`New Quality Check Point #${adminDraftItems.length + 1}`);
             renderAdminDraftList();
             
-            // Scroll to bottom
             const list = document.getElementById('admin-items-list');
             if (list) list.scrollTop = list.scrollHeight;
         }
@@ -1026,7 +1026,7 @@
         }
 
         /* ==========================================================================
-           7. NON-BLANK SINGLE-PAGE PDF GENERATION ENGINE
+           7. DIRECT VECTOR JSPDF SINGLE-PAGE GENERATION ENGINE
            ========================================================================== */
         async function handleFormSubmit(event) {
             event.preventDefault();
@@ -1057,15 +1057,12 @@
             submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Generating PDF...';
 
             try {
-                // Generate PDF and launch print preview
-                await generateAndExportPDF(techName, soNumber, unitSerial, dateStr);
+                // Generate PDF using jsPDF Direct Vector API
+                await generateVectorPDF(techName, soNumber, unitSerial, dateStr);
 
                 // Save record to LocalStorage History
-                const sanitizedSO = soNumber.replace(/[^a-zA-Z0-9]/g, '');
-                const sanitizedTech = techName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
-                const fileName = `${sanitizedSO}_${sanitizedTech}.pdf`;
-
-                saveToHistoryLog(soNumber, techName, unitSerial, fileName, dateStr);
+                const formattedFileName = `${sanitizeFilename(soNumber)}_${sanitizeFilename(techName)}.pdf`;
+                saveToHistoryLog(soNumber, techName, unitSerial, formattedFileName, dateStr);
 
                 if (typeof confetti === 'function') {
                     confetti({ particleCount: 90, spread: 60, origin: { y: 0.6 } });
@@ -1085,37 +1082,26 @@
             }
         }
 
-        async function generateAndExportPDF(techName, soNumber, unitSerial, dateStr) {
-            // STRICT PDF FILENAME FORMAT: [SO_Number]_[Tester_Name].pdf
-            const sanitizedSO = soNumber.trim().replace(/[^a-zA-Z0-9]/g, '');
-            const sanitizedTech = techName.trim().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
-            const pdfFileName = `${sanitizedSO}_${sanitizedTech}.pdf`;
+        function sanitizeFilename(str) {
+            if (!str) return '';
+            // Remove illegal file system characters: \ / : * ? " < > |
+            return str.replace(/[\\/:*?"<>|]/g, '').trim();
+        }
 
-            // Clean up old temporary containers if any exist
-            const oldTemp = document.getElementById('pdf-render-temp');
-            if (oldTemp) oldTemp.remove();
+        async function generateVectorPDF(techName, soNumber, unitSerial, dateStr) {
+            const { jsPDF } = window.jspdf;
 
-            // Create explicit, visible DOM container for html2canvas to capture without blank PDF bug
-            const tempContainer = document.createElement('div');
-            tempContainer.id = 'pdf-render-temp';
-            
-            tempContainer.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 780px;
-                background-color: #ffffff;
-                color: #000000;
-                z-index: 999999;
-                font-family: 'Inter', system-ui, -apple-system, sans-serif;
-                padding: 16px 20px;
-                box-sizing: border-box;
-                visibility: visible;
-                opacity: 1;
-                pointer-events: none;
-            `;
+            // STRICT PDF FILENAME FORMAT: [SO Number]_[Technician Name].pdf
+            const pdfFileName = `${sanitizeFilename(soNumber)}_${sanitizeFilename(techName)}.pdf`;
 
-            // Determine overall result
+            // Initialize Letter Portrait Document (Dimensions: 215.9mm x 279.4mm)
+            const doc = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'letter'
+            });
+
+            // Calculate overall evaluation result
             let failCount = 0;
             const items = getActiveChecklistItems();
             items.forEach((_, idx) => {
@@ -1125,161 +1111,250 @@
                 }
             });
 
-            const overallStatusHtml = failCount > 0 
-                ? `<span style="color: #dc2626; font-weight: 800;">DEFECTS DETECTED (${failCount})</span>`
-                : `<span style="color: #16a34a; font-weight: 800;">PASSED</span>`;
+            const formattedDate = dateStr ? new Date(dateStr).toLocaleString() : new Date().toLocaleString();
 
-            // Signature Data URL
-            const sigDataUrl = (!isSignatureEmpty() && sigCanvas) ? sigCanvas.toDataURL('image/png') : '';
+            // ----------------------------------------------------------------------
+            // 1. TOP HEADER BAR
+            // ----------------------------------------------------------------------
+            doc.setFillColor(0, 32, 91); // Lowes Navy (#00205b)
+            doc.rect(10, 10, 195.9, 14, 'F');
 
-            // Build Checklist HTML
-            let checklistItemsHtml = '';
-            items.forEach((itemText, idx) => {
-                const itemNum = idx + 1;
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(13);
+            doc.setFont('helvetica', 'bold');
+            doc.text("INLINE QUALITY CHECKS", 14, 18.5);
+
+            doc.setFontSize(7.5);
+            doc.setFont('helvetica', 'normal');
+            doc.text("Lowe's Dedicated Inspection Platform", 14, 21.5);
+
+            doc.setFontSize(8);
+            doc.text(`Date: ${formattedDate}`, 198, 16.5, { align: 'right' });
+            
+            if (failCount > 0) {
+                doc.setTextColor(252, 165, 165); // Light red
+                doc.setFont('helvetica', 'bold');
+                doc.text(`DEFECTS DETECTED (${failCount})`, 198, 21, { align: 'right' });
+            } else {
+                doc.setTextColor(134, 239, 172); // Light green
+                doc.setFont('helvetica', 'bold');
+                doc.text("PASSED - NO DEFECTS", 198, 21, { align: 'right' });
+            }
+
+            // ----------------------------------------------------------------------
+            // 2. GENERAL METADATA GRID BOX
+            // ----------------------------------------------------------------------
+            doc.setFillColor(241, 245, 249); // light slate background
+            doc.setDrawColor(203, 213, 225);
+            doc.roundedRect(10, 26, 195.9, 11, 1, 1, 'FD');
+
+            doc.setFontSize(7.5);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(71, 85, 105);
+            
+            // Column 1: SO Number
+            doc.text("SO NUMBER:", 13, 33);
+            doc.setTextColor(15, 23, 42);
+            doc.setFont('helvetica', 'bold');
+            doc.text(soNumber, 33, 33);
+
+            // Column 2: Technician Name
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(71, 85, 105);
+            doc.text("TECHNICIAN / TESTER:", 75, 33);
+            doc.setTextColor(15, 23, 42);
+            doc.setFont('helvetica', 'bold');
+            doc.text(techName, 110, 33);
+
+            // Column 3: Unit / Serial
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(71, 85, 105);
+            doc.text("SERIAL / UNIT #:", 150, 33);
+            doc.setTextColor(15, 23, 42);
+            doc.setFont('helvetica', 'bold');
+            doc.text(unitSerial, 178, 33);
+
+            // ----------------------------------------------------------------------
+            // 3. CHECKLIST TABLE SECTION (2 COLUMNS SIDE-BY-SIDE)
+            // ----------------------------------------------------------------------
+            doc.setFillColor(0, 73, 144); // Lowes Blue (#004990)
+            doc.rect(10, 39, 195.9, 4.5, 'F');
+            doc.setFontSize(7.5);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(255, 255, 255);
+            doc.text(`INLINE QUALITY CHECKLIST (${items.length} STANDARD REQUIREMENTS)`, 13, 42.2);
+
+            const midIndex = Math.ceil(items.length / 2);
+            const startY = 45;
+            const rowHeight = 4.8;
+
+            doc.setFontSize(6.5);
+
+            for (let i = 0; i < items.length; i++) {
+                const itemNum = i + 1;
                 const state = itemStates[itemNum] || { status: 'pass', comment: '' };
+                const isLeftCol = i < midIndex;
+                const rowIndex = isLeftCol ? i : (i - midIndex);
                 
-                let badge = '<span style="color: #16a34a; font-weight: 700;">[PASS]</span>';
-                if (state.status === 'fail') badge = '<span style="color: #dc2626; font-weight: 700;">[FAIL]</span>';
-                if (state.status === 'na') badge = '<span style="color: #64748b; font-weight: 700;">[N/A]</span>';
+                const currentY = startY + (rowIndex * rowHeight);
+                const xPos = isLeftCol ? 12 : 112;
+                const maxWidth = 76;
 
-                const commentText = state.comment 
-                    ? `<div style="font-size: 5.5pt; color: #475569; font-style: italic;">Note: ${escapeHtml(state.comment)}</div>` 
-                    : '';
+                // Alternate row background shading
+                if (rowIndex % 2 === 1) {
+                    doc.setFillColor(248, 250, 252);
+                    doc.rect(isLeftCol ? 10 : 108, currentY - 3.2, 95.5, rowHeight, 'F');
+                }
 
-                checklistItemsHtml += `
-                    <div style="padding: 2.5px 4px; border-bottom: 0.5px solid #e2e8f0; font-size: 6.5pt; line-height: 1.2; display: flex; justify-content: space-between; align-items: flex-start; break-inside: avoid;">
-                        <div style="flex: 1; padding-right: 4px;">
-                            <strong style="color: #00205b;">${itemNum}.</strong> ${escapeHtml(itemText)}
-                            ${commentText}
-                        </div>
-                        <div style="flex-shrink: 0; text-align: right;">${badge}</div>
-                    </div>
-                `;
-            });
+                // Item number & text
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(0, 32, 91);
+                doc.text(`${itemNum}.`, xPos, currentY);
 
-            // Build 8 Photo Grid HTML
-            let photosGridHtml = '';
-            PHOTO_SLOTS.forEach(slot => {
-                const slotId = slot.id;
-                const imgSrc = photoData[slotId];
-                
-                if (imgSrc) {
-                    photosGridHtml += `
-                        <div style="width: 175px; height: 135px; border: 1px solid #cbd5e1; border-radius: 4px; overflow: hidden; position: relative; background: #f8fafc; display: flex; flex-direction: column;">
-                            <img src="${imgSrc}" style="width: 100%; height: 112px; object-fit: cover; display: block;" alt="Slot ${slotId}">
-                            <div style="background: #00205b; color: #ffffff; font-size: 6pt; font-weight: 700; padding: 2px 4px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; height: 23px; line-height: 19px;">
-                                ${escapeHtml(slot.caption)}
-                            </div>
-                        </div>
-                    `;
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(30, 41, 59);
+                let itemText = items[i];
+                if (itemText.length > 48) {
+                    itemText = itemText.substring(0, 45) + '...';
+                }
+                doc.text(itemText, xPos + 4, currentY);
+
+                // Badge / Status
+                const badgeX = isLeftCol ? 101 : 199;
+                if (state.status === 'fail') {
+                    doc.setTextColor(220, 38, 38);
+                    doc.setFont('helvetica', 'bold');
+                    doc.text("[FAIL]", badgeX, currentY, { align: 'right' });
+                } else if (state.status === 'na') {
+                    doc.setTextColor(100, 116, 139);
+                    doc.setFont('helvetica', 'bold');
+                    doc.text("[N/A]", badgeX, currentY, { align: 'right' });
                 } else {
-                    photosGridHtml += `
-                        <div style="width: 175px; height: 135px; border: 1px dashed #cbd5e1; border-radius: 4px; overflow: hidden; position: relative; background: #f1f5f9; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                            <div style="color: #94a3b8; font-size: 6.5pt; text-align: center; margin-bottom: 12px;">No Photo Attached</div>
-                            <div style="position: absolute; bottom: 0; left: 0; right: 0; background: #64748b; color: #ffffff; font-size: 6pt; font-weight: 700; padding: 2px 4px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                ${escapeHtml(slot.caption)}
-                            </div>
-                        </div>
-                    `;
-                }
-            });
-
-            // Assemble complete single-page Letter document HTML
-            tempContainer.innerHTML = `
-                <!-- Document Header -->
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2.5px solid #00205b; padding-bottom: 4px; margin-bottom: 6px;">
-                    <div>
-                        <h1 style="font-size: 13pt; font-weight: 800; color: #00205b; margin: 0; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1;">Inline Quality Checks</h1>
-                        <p style="font-size: 7.5pt; color: #0072ce; font-weight: 700; margin: 2px 0 0 0;">Lowe's Quality Assurance Inspection Report</p>
-                    </div>
-                    <div style="text-align: right; font-size: 7.5pt; color: #1e293b; line-height: 1.3;">
-                        <div><strong>Date/Time:</strong> ${new Date(dateStr || Date.now()).toLocaleString()}</div>
-                        <div><strong>Overall Result:</strong> ${overallStatusHtml}</div>
-                    </div>
-                </div>
-
-                <!-- Info Grid Box -->
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; background: #f1f5f9; padding: 5px 10px; border-radius: 4px; border: 1px solid #cbd5e1; margin-bottom: 8px; font-size: 7.5pt;">
-                    <div><strong style="color: #475569;">SO Number:</strong> <span style="font-weight: 800; color: #0f172a;">${escapeHtml(soNumber)}</span></div>
-                    <div><strong style="color: #475569;">Technician / Tester:</strong> <span style="font-weight: 800; color: #0f172a;">${escapeHtml(techName)}</span></div>
-                    <div><strong style="color: #475569;">Serial / Unit #:</strong> <span style="font-weight: 700; color: #0f172a;">${escapeHtml(unitSerial)}</span></div>
-                </div>
-
-                <!-- Checklist Table Section -->
-                <div style="margin-bottom: 8px;">
-                    <div style="font-size: 7.5pt; font-weight: 800; color: #00205b; margin-bottom: 3px; border-bottom: 1px solid #00205b; padding-bottom: 1px; text-transform: uppercase;">
-                        Inline Quality Checklist (${items.length} Standard Items)
-                    </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2px 10px;">
-                        ${checklistItemsHtml}
-                    </div>
-                </div>
-
-                <!-- 8 Photo Grid Section (4 x 2) -->
-                <div style="margin-bottom: 8px;">
-                    <div style="font-size: 7.5pt; font-weight: 800; color: #00205b; margin-bottom: 4px; border-bottom: 1px solid #00205b; padding-bottom: 1px; text-transform: uppercase;">
-                        Photo Evidence Grid (8 Required Slots)
-                    </div>
-                    <div style="display: grid; grid-template-columns: repeat(4, 175px); gap: 6px; justify-content: center;">
-                        ${photosGridHtml}
-                    </div>
-                </div>
-
-                <!-- Signature Sign-off Footer -->
-                <div style="display: flex; justify-content: space-between; align-items: flex-end; border-top: 1px solid #cbd5e1; padding-top: 4px; margin-top: 4px;">
-                    <div style="font-size: 6.5pt; color: #64748b; max-width: 480px; line-height: 1.2;">
-                        <p style="margin: 0; font-weight: 600;">Verified and inspected in compliance with Lowe's Inline Quality Standards.</p>
-                        <p style="margin: 1px 0 0 0;">Report automatically certified via Dedicated Inspection Platform.</p>
-                    </div>
-                    <div style="text-align: center; width: 170px;">
-                        <div style="height: 38px; border-bottom: 1.5px dashed #94a3b8; display: flex; align-items: center; justify-content: center;">
-                            ${sigDataUrl ? `<img src="${sigDataUrl}" style="max-height: 36px; max-width: 160px; object-fit: contain;" alt="Signature">` : '<span style="font-size: 6pt; color: #94a3b8;">[No Signature]</span>'}
-                        </div>
-                        <div style="font-size: 6pt; color: #334155; font-weight: 700; margin-top: 2px; text-transform: uppercase;">Technician Sign-off</div>
-                    </div>
-                </div>
-            `;
-
-            document.body.appendChild(tempContainer);
-
-            // Allow DOM paint cycle to complete
-            await new Promise(resolve => setTimeout(resolve, 150));
-
-            // html2pdf options tuned for single page Letter layout
-            const opt = {
-                margin:       [0.15, 0.15, 0.15, 0.15],
-                filename:     pdfFileName,
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { 
-                    scale: 2, 
-                    useCORS: true, 
-                    allowTaint: true,
-                    logging: false,
-                    scrollX: 0,
-                    scrollY: 0
-                },
-                jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
-            };
-
-            try {
-                const worker = html2pdf().set(opt).from(tempContainer);
-                const pdfBlob = await worker.output('blob');
-                const pdfBlobUrl = URL.createObjectURL(pdfBlob);
-
-                // Save PDF file locally
-                await worker.save();
-
-                // Open blob URL for print preview
-                const printWin = window.open(pdfBlobUrl, '_blank');
-                if (!printWin) {
-                    showToast("PDF saved to downloads. Pop-up blocked for print preview.", "info");
-                }
-            } finally {
-                // Safely remove temporary container from DOM
-                if (tempContainer && tempContainer.parentNode) {
-                    tempContainer.parentNode.removeChild(tempContainer);
+                    doc.setTextColor(22, 163, 74);
+                    doc.setFont('helvetica', 'bold');
+                    doc.text("[PASS]", badgeX, currentY, { align: 'right' });
                 }
             }
+
+            // Divider vertical line between columns
+            const maxRows = Math.ceil(items.length / 2);
+            const tableEndY = startY + (maxRows * rowHeight);
+            doc.setDrawColor(226, 232, 240);
+            doc.line(106, 44, 106, tableEndY);
+
+            // ----------------------------------------------------------------------
+            // 4. 8 PHOTO EVIDENCE GRID SECTION (4 COLUMNS x 2 ROWS)
+            // ----------------------------------------------------------------------
+            const photoHeaderY = tableEndY + 3;
+            doc.setFillColor(0, 73, 144);
+            doc.rect(10, photoHeaderY, 195.9, 4.5, 'F');
+            doc.setFontSize(7.5);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(255, 255, 255);
+            doc.text("REQUIRED PHOTO EVIDENCE GRID (8 CAPTURED SLOTS)", 13, photoHeaderY + 3.2);
+
+            const gridStartY = photoHeaderY + 6;
+            const photoW = 46;
+            const photoH = 38;
+            const gapX = 3.9;
+            const gapY = 3.5;
+
+            PHOTO_SLOTS.forEach((slot, idx) => {
+                const col = idx % 4;
+                const row = Math.floor(idx / 4);
+
+                const x = 10 + (col * (photoW + gapX));
+                const y = gridStartY + (row * (photoH + gapY));
+
+                const slotId = slot.id;
+                const imgData = photoData[slotId];
+
+                if (imgData) {
+                    try {
+                        doc.addImage(imgData, 'JPEG', x, y, photoW, photoH - 6);
+                    } catch (e) {
+                        console.warn("Could not render photo slot in PDF:", e);
+                    }
+                } else {
+                    // No photo placeholder card
+                    doc.setFillColor(241, 245, 249);
+                    doc.setDrawColor(203, 213, 225);
+                    doc.roundedRect(x, y, photoW, photoH - 6, 1, 1, 'FD');
+                    doc.setFontSize(6.5);
+                    doc.setFont('helvetica', 'normal');
+                    doc.setTextColor(148, 163, 184);
+                    doc.text("No Photo Attached", x + (photoW / 2), y + 16, { align: 'center' });
+                }
+
+                // Slot Caption Label Footer
+                doc.setFillColor(0, 32, 91);
+                doc.rect(x, y + photoH - 6, photoW, 6, 'F');
+
+                doc.setFontSize(5.8);
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(255, 255, 255);
+                
+                let captionText = slot.caption;
+                if (captionText.length > 28) captionText = captionText.substring(0, 26) + '..';
+                doc.text(captionText, x + (photoW / 2), y + photoH - 2, { align: 'center' });
+
+                // Card Outline Border
+                doc.setDrawColor(203, 213, 225);
+                doc.rect(x, y, photoW, photoH);
+            });
+
+            // ----------------------------------------------------------------------
+            // 5. SIGNATURE & CERTIFICATION SIGN-OFF FOOTER
+            // ----------------------------------------------------------------------
+            const sigSectionY = gridStartY + (2 * (photoH + gapY)) + 3;
+
+            doc.setDrawColor(203, 213, 225);
+            doc.line(10, sigSectionY, 205.9, sigSectionY);
+
+            // Left Side: Compliance Note
+            doc.setFontSize(6.5);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(100, 116, 139);
+            doc.text("Verified and inspected in compliance with Lowe's Inline Quality Standards.", 10, sigSectionY + 6);
+            doc.text("Report automatically certified via Lowe's Dedicated Tablet Inspection Platform.", 10, sigSectionY + 10);
+            doc.text(`SO #: ${soNumber}   |   Tester: ${techName}   |   Time: ${formattedDate}`, 10, sigSectionY + 14);
+
+            // Right Side: Signature Image Box
+            const sigDataUrl = (!isSignatureEmpty() && sigCanvas) ? sigCanvas.toDataURL('image/png') : null;
+            if (sigDataUrl) {
+                try {
+                    doc.addImage(sigDataUrl, 'PNG', 148, sigSectionY + 1, 52, 18);
+                } catch(e) {
+                    console.warn("Signature export failed:", e);
+                }
+            } else {
+                doc.setFontSize(7);
+                doc.setTextColor(148, 163, 184);
+                doc.text("[ No Signature ]", 174, sigSectionY + 10, { align: 'center' });
+            }
+
+            doc.setDrawColor(100, 116, 139);
+            doc.setLineWidth(0.3);
+            doc.line(148, sigSectionY + 19, 200, sigSectionY + 19);
+
+            doc.setFontSize(7);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(15, 23, 42);
+            doc.text("TECHNICIAN SIGN-OFF", 174, sigSectionY + 23, { align: 'center' });
+
+            // ----------------------------------------------------------------------
+            // 6. OPEN PREVIEW TAB & DOWNLOAD FILE
+            // ----------------------------------------------------------------------
+            const pdfBlobUrl = doc.output('bloburl');
+            
+            // Open print preview window in new tab
+            const printWin = window.open(pdfBlobUrl, '_blank');
+            if (!printWin) {
+                showToast("PDF generated! Allow pop-ups to open print preview.", "info");
+            }
+
+            // Save / Download PDF with exact formatted filename
+            doc.save(pdfFileName);
         }
 
         /* ==========================================================================
@@ -1297,7 +1372,7 @@
             initDateTime();
 
             clearSignature();
-            // Note: Technician Name `#tech-name` is explicitly preserved!
+            // Note: Technician Name `#tech-name` is explicitly preserved for the next unit!
         }
 
         function confirmResetForm() {
