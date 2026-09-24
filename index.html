@@ -68,42 +68,37 @@
             cursor: crosshair;
         }
 
-        /* Photo slot 2in x 2in dimension guide */
-        .photo-box-2in {
-            width: 2in;
-            height: 2in;
-            object-fit: cover;
-        }
-
-        /* Strictly formatted PDF Printable Layout Container */
+        /* Strictly formatted PDF Printable Layout Container (Renderable fixed box to avoid blank PDF bug) */
         #pdf-letter-sheet {
-            width: 8.5in;
-            min-height: 11in;
-            max-height: 11in;
-            padding: 0.35in;
+            position: fixed;
+            left: 0;
+            top: 0;
+            z-index: -9999;
+            width: 790px;
+            padding: 18px 22px;
             box-sizing: border-box;
             background: #ffffff;
-            color: #111827;
-            font-size: 10.5pt;
+            color: #0f172a;
+            font-family: 'Inter', sans-serif;
+            font-size: 8.5pt;
             line-height: 1.25;
-            overflow: hidden;
-            position: absolute;
-            left: -9999px;
-            top: -9999px;
+            opacity: 1;
+            pointer-events: none;
+            box-shadow: none;
         }
 
         .pdf-grid-2in {
             display: grid;
-            grid-template-columns: repeat(4, 2in);
-            gap: 0.12in;
+            grid-template-columns: repeat(4, 180px);
+            gap: 10px;
             justify-content: center;
         }
 
         .pdf-photo-cell {
-            width: 2in;
-            height: 2in;
-            border: 1.5px solid #cbd5e1;
-            border-radius: 4px;
+            width: 180px;
+            height: 160px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
             overflow: hidden;
             position: relative;
             background: #f8fafc;
@@ -120,7 +115,7 @@
             bottom: 0;
             left: 0;
             right: 0;
-            background: rgba(0, 32, 91, 0.85);
+            background: rgba(0, 32, 91, 0.88);
             color: #ffffff;
             font-size: 6.5pt;
             font-weight: 600;
@@ -157,18 +152,17 @@
                 </div>
             </div>
 
-         
-
+            <div class="flex items-center space-x-2 sm:space-x-3">
                 <!-- History Drawer Trigger -->
                 <button type="button" onclick="openHistoryModal()" 
-                    class="inline-flex items-center space-x-1.5 bg-blue-800/80 hover:bg-blue-700 text-blue-100 text-xs sm:text-sm font-medium px-3 py-2 rounded-lg border border-blue-600/50 active:scale-95 transition-all">
+                    class="inline-flex items-center space-x-1.5 bg-blue-800/80 hover:bg-blue-700 text-blue-100 text-xs sm:text-sm font-medium px-3.5 py-2 rounded-lg border border-blue-600/50 active:scale-95 transition-all">
                     <i class="fa-solid fa-clock-rotate-left"></i>
-                    <span class="hidden md:inline">History</span>
+                    <span>History</span>
                 </button>
 
                 <!-- Dark Mode Toggle -->
                 <button type="button" onclick="toggleDarkMode()" 
-                    class="p-2 rounded-lg bg-blue-900/50 text-blue-200 hover:text-white hover:bg-blue-800/80 transition-colors">
+                    class="p-2 rounded-lg bg-blue-900/50 text-blue-200 hover:text-white hover:bg-blue-800/80 transition-colors" title="Toggle Theme">
                     <i id="theme-toggle-icon" class="fa-solid fa-moon text-lg"></i>
                 </button>
             </div>
@@ -268,12 +262,8 @@
 
                     <div class="flex items-center gap-3">
                         <span id="checklist-progress" class="text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-3 py-1.5 rounded-lg">
-                            0 / 15 Passed
+                            0 / 15 Evaluated
                         </span>
-                        <button type="button" onclick="passAllItems()" 
-                            class="sm:hidden text-xs bg-emerald-600 text-white font-semibold px-3 py-1.5 rounded-lg active:scale-95">
-                            <i class="fa-solid fa-check-double mr-1"></i> Pass All
-                        </button>
                     </div>
                 </div>
 
@@ -305,7 +295,7 @@
                 <!-- Hidden file inputs for direct camera upload fallback -->
                 <div id="file-input-container" class="hidden"></div>
 
-                <!-- 8 Photo Slots Grid (Responsive layout) -->
+                <!-- 8 Photo Slots Grid -->
                 <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4" id="photo-grid">
                     <!-- Photo cards injected dynamically by JS -->
                 </div>
@@ -340,7 +330,7 @@
             <!-- Form Action Footer -->
             <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
                 <p class="text-xs text-slate-500 dark:text-slate-400 text-center sm:text-left">
-                    Submitting will generate PDF file <strong class="text-slate-700 dark:text-slate-200">[SO Number]_[Technician Name].pdf</strong>, store it in local storage, open print preview, and reset form.
+                    Submitting will generate <strong class="text-slate-700 dark:text-slate-200">[SO_Number]_[Technician_Name].pdf</strong>, save to log history, and prompt PDF preview.
                 </p>
 
                 <div class="flex items-center gap-3 w-full sm:w-auto">
@@ -406,7 +396,7 @@
         </div>
     </div>
 
-    <!-- History Modal -->
+    <!-- History Log Modal -->
     <div id="history-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-3 sm:p-6">
         <div class="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-2xl border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col max-h-[85vh]">
             <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
@@ -425,7 +415,7 @@
 
             <div class="p-3 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900 rounded-b-2xl">
                 <button type="button" onclick="clearAllHistory()" class="text-xs text-red-600 hover:text-red-700 font-semibold">
-                    <i class="fa-solid fa-trash-can mr-1"></i> Clear Local Storage History
+                    <i class="fa-solid fa-trash-can mr-1"></i> Clear Local History
                 </button>
                 <button type="button" onclick="closeHistoryModal()" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold rounded-lg">
                     Close
@@ -437,41 +427,41 @@
     <!-- Toast Notification Container -->
     <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
-    <!-- PDF PRINTABLE SHEET (Strictly engineered for 1 Letter-size page: 8.5" x 11") -->
+    <!-- PDF PRINTABLE SHEET (Fixed in layout viewport to allow html2canvas proper pixel sampling) -->
     <div id="pdf-letter-sheet">
         <!-- Header Section -->
         <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #00205b; padding-bottom: 6px; margin-bottom: 8px;">
             <div>
-                <h1 style="font-size: 14pt; font-weight: 800; color: #00205b; margin: 0; text-transform: uppercase;">Inline Quality Checks</h1>
-                <p style="font-size: 8.5pt; color: #0072ce; font-weight: 700; margin: 2px 0 0 0;">Lowe's Quality Assurance Sign-Off Report</p>
+                <h1 style="font-size: 13pt; font-weight: 800; color: #00205b; margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">Inline Quality Checks</h1>
+                <p style="font-size: 8pt; color: #0072ce; font-weight: 700; margin: 1px 0 0 0;">Lowe's Quality Assurance Inspection Report</p>
             </div>
-            <div style="text-align: right; font-size: 8pt; color: #334155;">
+            <div style="text-align: right; font-size: 7.5pt; color: #334155;">
                 <div><strong style="color: #0f172a;">Date/Time:</strong> <span id="pdf-val-date"></span></div>
                 <div><strong style="color: #0f172a;">Overall Result:</strong> <span id="pdf-val-overall" style="color: #16a34a; font-weight: 700;">PASSED</span></div>
             </div>
         </div>
 
         <!-- Info Grid Box -->
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; background-color: #f1f5f9; padding: 6px 8px; border-radius: 4px; border: 1px solid #cbd5e1; margin-bottom: 8px; font-size: 8pt;">
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; background-color: #f1f5f9; padding: 6px 10px; border-radius: 4px; border: 1px solid #cbd5e1; margin-bottom: 8px; font-size: 7.5pt;">
             <div><strong style="color: #475569;">SO Number:</strong> <span id="pdf-val-so" style="font-weight: 700; color: #0f172a;"></span></div>
-            <div><strong style="color: #475569;">Technician / Tester:</strong> <span id="pdf-val-tech" style="font-weight: 700; color: #0f172a;"></span></div>
-            <div><strong style="color: #475569;">Unit / Serial #:</strong> <span id="pdf-val-unit" style="font-weight: 600; color: #0f172a;">N/A</span></div>
+            <div><strong style="color: #475569;">Technician:</strong> <span id="pdf-val-tech" style="font-weight: 700; color: #0f172a;"></span></div>
+            <div><strong style="color: #475569;">Serial #:</strong> <span id="pdf-val-unit" style="font-weight: 600; color: #0f172a;">N/A</span></div>
         </div>
 
-        <!-- Checklist 15 items in 2-column table layout -->
-        <div style="margin-bottom: 8px;">
-            <div style="font-size: 8.5pt; font-weight: 700; color: #00205b; margin-bottom: 4px; border-bottom: 1px solid #e2e8f0; padding-bottom: 2px;">
-                Quality Inspection Items (15 Items Checklist)
+        <!-- Checklist 15 items in 2-column layout -->
+        <div style="margin-bottom: 10px;">
+            <div style="font-size: 8pt; font-weight: 700; color: #00205b; margin-bottom: 4px; border-bottom: 1px solid #cbd5e1; padding-bottom: 2px; text-transform: uppercase;">
+                Quality Checklist Items (15 Standard Checks)
             </div>
-            <div id="pdf-checklist-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 3px 8px; font-size: 7pt; line-height: 1.15;">
+            <div id="pdf-checklist-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 3px 12px; font-size: 6.8pt; line-height: 1.2;">
                 <!-- Populated dynamically -->
             </div>
         </div>
 
-        <!-- 8 Photos Section (4 Columns x 2 Rows of 2"x2" Square Boxes) -->
+        <!-- 8 Photos Section Grid (2" x 2" Ratio Boxes) -->
         <div style="margin-bottom: 8px;">
-            <div style="font-size: 8.5pt; font-weight: 700; color: #00205b; margin-bottom: 4px; border-bottom: 1px solid #e2e8f0; padding-bottom: 2px;">
-                Inspection Photo Evidence (8 Photos - 2" x 2" Boxes)
+            <div style="font-size: 8pt; font-weight: 700; color: #00205b; margin-bottom: 4px; border-bottom: 1px solid #cbd5e1; padding-bottom: 2px; text-transform: uppercase;">
+                Inspection Photo Evidence (8 Photos Grid)
             </div>
             <div id="pdf-photos-container" class="pdf-grid-2in">
                 <!-- 8 photo boxes generated dynamically -->
@@ -479,24 +469,23 @@
         </div>
 
         <!-- Signature & Footer Signoff -->
-        <div style="display: flex; justify-content: space-between; align-items: flex-end; border-top: 1px solid #cbd5e1; pt: 4px; margin-top: 4px;">
-            <div style="font-size: 7.5pt; color: #64748b;">
-                <p style="margin: 0;">Verified and inspected according to Lowe's Inline Quality Standards.</p>
-                <p style="margin: 2px 0 0 0;">Report generated automatically via Mobile Quality Web App.</p>
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; border-top: 1px solid #cbd5e1; padding-top: 6px; margin-top: 6px;">
+            <div style="font-size: 7pt; color: #64748b; max-width: 450px;">
+                <p style="margin: 0; font-weight: 500;">Verified and inspected according to Lowe's Inline Quality Assurance Standards.</p>
+                <p style="margin: 1px 0 0 0;">Report automatically generated via Dedicated Tablet Quality Application.</p>
             </div>
-            <div style="text-align: center; width: 1.8in;">
-                <div style="height: 0.45in; border-bottom: 1.5px dashed #94a3b8; display: flex; align-items: center; justify-content: center;">
-                    <img id="pdf-val-sig" src="" style="max-height: 0.4in; max-width: 1.7in; object-fit: contain; display: none;" alt="Signature">
+            <div style="text-align: center; width: 170px;">
+                <div style="height: 40px; border-bottom: 1.5px dashed #94a3b8; display: flex; align-items: center; justify-content: center;">
+                    <img id="pdf-val-sig" src="" style="max-height: 38px; max-width: 160px; object-fit: contain; display: none;" alt="Signature">
                 </div>
-                <div style="font-size: 7pt; color: #334155; font-weight: 600; margin-top: 2px;">Technician Signature</div>
+                <div style="font-size: 6.5pt; color: #334155; font-weight: 700; margin-top: 2px; uppercase;">Technician Sign-off</div>
             </div>
         </div>
     </div>
 
-
     <script>
         /* ==========================================================================
-           1. CONSTANTS & DATA STRUCTURES
+           1. CONSTANTS & INITIAL STATE
            ========================================================================== */
         const CHECKLIST_ITEMS = [
             "Doors and stickers are torqued and aligned.",
@@ -528,8 +517,8 @@
         ];
 
         // Global State
-        let itemStates = {}; // { 1: { status: 'pass'|'fail'|'na', comment: '' } }
-        let photoData = {};  // { 1: base64DataString }
+        let itemStates = {}; 
+        let photoData = {};  
         let activePhotoSlotIndex = null;
         let mediaStream = null;
         let currentFacingMode = 'environment';
@@ -547,20 +536,16 @@
             initSignatureCanvas();
             checkThemePreference();
 
-            // Resize canvas context on window resize
             window.addEventListener('resize', resizeCanvas);
         });
 
-        // Auto Populate Current Local Date/Time
         function initDateTime() {
             const dateInput = document.getElementById('check-date');
             const now = new Date();
-            // Format YYYY-MM-DDTHH:MM
             const localIso = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
             dateInput.value = localIso;
         }
 
-        // Local Storage Tech Name Handler
         function loadPersistentTechName() {
             const savedName = localStorage.getItem('lowes_qc_tech_name');
             if (savedName) {
@@ -574,7 +559,7 @@
         }
 
         /* ==========================================================================
-           3. CHECKLIST LOGIC & RENDERING
+           3. CHECKLIST RENDER & EVENTS
            ========================================================================== */
         function renderChecklist() {
             const container = document.getElementById('checklist-container');
@@ -594,7 +579,6 @@
 
                 card.innerHTML = `
                     <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                        <!-- Item Title & Description -->
                         <div class="flex items-start space-x-3 flex-1">
                             <span class="flex-shrink-0 w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs flex items-center justify-center mt-0.5">
                                 ${itemNum}
@@ -608,7 +592,6 @@
 
                         <!-- 3-Way Status Buttons -->
                         <div class="flex items-center space-x-1.5 sm:space-x-2 self-end md:self-auto">
-                            <!-- PASS -->
                             <button type="button" onclick="setChecklistStatus(${itemNum}, 'pass')"
                                 class="px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95 ${
                                     currentStatus === 'pass' 
@@ -619,7 +602,6 @@
                                 <span>Pass</span>
                             </button>
 
-                            <!-- FAIL -->
                             <button type="button" onclick="setChecklistStatus(${itemNum}, 'fail')"
                                 class="px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95 ${
                                     currentStatus === 'fail' 
@@ -630,7 +612,6 @@
                                 <span>Fail</span>
                             </button>
 
-                            <!-- N/A -->
                             <button type="button" onclick="setChecklistStatus(${itemNum}, 'na')"
                                 class="px-3 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1 active:scale-95 ${
                                     currentStatus === 'na' 
@@ -642,7 +623,6 @@
                         </div>
                     </div>
 
-                    <!-- Comment input field (visible or expanding) -->
                     <div class="mt-2.5 pt-2 border-t border-slate-200/60 dark:border-slate-800 flex items-center space-x-2">
                         <i class="fa-regular fa-comment text-slate-400 text-xs"></i>
                         <input type="text" value="${itemStates[itemNum].comment || ''}" 
@@ -669,23 +649,15 @@
             }
         }
 
-        function passAllItems() {
-            CHECKLIST_ITEMS.forEach((_, idx) => {
-                itemStates[idx + 1].status = 'pass';
-            });
-            renderChecklist();
-            showToast("All 15 checklist items set to Passed!", "success");
-        }
-
         function updateChecklistProgress() {
-            let passedCount = 0;
+            let evaluatedCount = 0;
             Object.values(itemStates).forEach(val => {
-                if (val.status === 'pass' || val.status === 'na') passedCount++;
+                if (val.status !== null) evaluatedCount++;
             });
             const badge = document.getElementById('checklist-progress');
             if (badge) {
-                badge.innerText = `${passedCount} / 15 Checked`;
-                if (passedCount === 15) {
+                badge.innerText = `${evaluatedCount} / 15 Evaluated`;
+                if (evaluatedCount === 15) {
                     badge.className = "text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/40 px-3 py-1.5 rounded-lg";
                 } else {
                     badge.className = "text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-3 py-1.5 rounded-lg";
@@ -694,7 +666,7 @@
         }
 
         /* ==========================================================================
-           4. 8 PHOTO CAMERA & CAPTURE LOGIC
+           4. 8 PHOTO CAMERA & GALLERY
            ========================================================================== */
         function renderPhotoSlots() {
             const photoGrid = document.getElementById('photo-grid');
@@ -709,7 +681,6 @@
                 const hasImage = !!photoData[slotId];
                 if (hasImage) capturedCount++;
 
-                // Build hidden file input for direct upload fallback
                 const hiddenInput = document.createElement('input');
                 hiddenInput.type = 'file';
                 hiddenInput.accept = 'image/*';
@@ -718,7 +689,6 @@
                 hiddenInput.onchange = (e) => handleFileUpload(e, slotId);
                 fileContainer.appendChild(hiddenInput);
 
-                // Slot UI Card
                 const card = document.createElement('div');
                 card.className = `relative rounded-xl border p-2.5 sm:p-3 flex flex-col justify-between transition-all ${
                     hasImage 
@@ -739,7 +709,6 @@
                         </div>
                         <p class="text-[10px] text-slate-500 dark:text-slate-400 mb-2 truncate" title="${slot.caption}">${slot.caption}</p>
 
-                        <!-- Thumbnail Preview Area -->
                         <div class="w-full aspect-square rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center relative group">
                             ${hasImage 
                                 ? `<img src="${photoData[slotId]}" class="w-full h-full object-cover" alt="Slot ${slotId}">
@@ -748,13 +717,12 @@
                                    </button>`
                                 : `<div class="text-center p-2">
                                        <i class="fa-solid fa-camera text-slate-300 dark:text-slate-600 text-2xl mb-1"></i>
-                                       <p class="text-[10px] text-slate-400">2" x 2" PDF Box</p>
+                                       <p class="text-[10px] text-slate-400">2" x 2" Box</p>
                                    </div>`
                             }
                         </div>
                     </div>
 
-                    <!-- Action buttons -->
                     <div class="grid grid-cols-2 gap-1.5 mt-2.5">
                         <button type="button" onclick="openCameraModal(${slotId})" 
                             class="px-2 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1 active:scale-95 transition-all">
@@ -773,7 +741,6 @@
                 photoGrid.appendChild(card);
             });
 
-            // Update photo progress badge
             const badge = document.getElementById('photo-progress-badge');
             if (badge) {
                 badge.innerText = `${capturedCount} / 8 Captured`;
@@ -802,7 +769,6 @@
             showToast(`Photo Slot ${slotId} cleared`, 'info');
         }
 
-        /* Live Camera Stream Modal Logic */
         async function openCameraModal(slotId) {
             activePhotoSlotIndex = slotId;
             const slot = PHOTO_SLOTS.find(s => s.id === slotId);
@@ -827,9 +793,9 @@
                 });
                 video.srcObject = mediaStream;
             } catch (err) {
-                console.warn("Camera getUserMedia error, falling back to file input:", err);
+                console.warn("Camera stream unavailable:", err);
                 closeCameraModal();
-                showToast("Live camera stream unavailable. Opening file/camera picker instead.", "info");
+                showToast("Live camera stream unavailable. Opening file selector.", "info");
                 triggerFileInput(activePhotoSlotIndex);
             }
         }
@@ -866,13 +832,12 @@
             showToast(`Photo Captured for Slot ${activePhotoSlotIndex}!`, "success");
         }
 
-        // Compress image data to keep local storage lightweight
         function compressAndStorePhoto(base64Str, slotId) {
             const img = new Image();
             img.onload = function() {
                 const canvas = document.createElement('canvas');
-                const MAX_WIDTH = 600;
-                const MAX_HEIGHT = 600;
+                const MAX_WIDTH = 550;
+                const MAX_HEIGHT = 550;
                 let width = img.width;
                 let height = img.height;
 
@@ -899,14 +864,13 @@
         }
 
         /* ==========================================================================
-           5. DIGITAL SIGNATURE CANVAS LOGIC
+           5. DIGITAL SIGNATURE CANVAS
            ========================================================================== */
         function initSignatureCanvas() {
             sigCanvas = document.getElementById('sig-canvas');
             sigCtx = sigCanvas.getContext('2d');
             resizeCanvas();
 
-            // Pointer & Touch Events
             sigCanvas.addEventListener('mousedown', startDrawingSig);
             sigCanvas.addEventListener('mousemove', drawSig);
             sigCanvas.addEventListener('mouseup', stopDrawingSig);
@@ -972,7 +936,8 @@
         function clearSignature() {
             if (!sigCtx || !sigCanvas) return;
             sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
-            document.getElementById('sig-placeholder').style.display = 'flex';
+            const placeholder = document.getElementById('sig-placeholder');
+            if (placeholder) placeholder.style.display = 'flex';
         }
 
         function isSignatureEmpty() {
@@ -984,7 +949,7 @@
         }
 
         /* ==========================================================================
-           6. PDF GENERATION & PRINT preview LOGIC
+           6. PDF GENERATION & PREVIEW (FIXED BLANK PDF ISSUE)
            ========================================================================== */
         async function handleFormSubmit(event) {
             event.preventDefault();
@@ -999,13 +964,11 @@
                 return;
             }
 
-            // Check signature
             if (isSignatureEmpty()) {
                 showToast("Technician digital signature is required before submitting.", "error");
                 return;
             }
 
-            // Check if photos taken
             const photoCount = Object.keys(photoData).length;
             if (photoCount < 8) {
                 const proceed = confirm(`Only ${photoCount} of 8 photos captured. Proceed with PDF generation?`);
@@ -1017,49 +980,53 @@
             submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Generating PDF...';
 
             try {
-                // Populate PDF Hidden Sheet
+                // Populate Printable Container DOM
                 populatePDFSheet(techName, soNumber, unitSerial, dateStr);
 
-                // Prepare filename format strictly: [SO Number]_[Technician Name].pdf
+                // Format filename: [SO_Number]_[Technician_Name].pdf
                 const sanitizedSO = soNumber.replace(/[^a-zA-Z0-9]/g, '');
                 const sanitizedTech = techName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
                 const fileName = `${sanitizedSO}_${sanitizedTech}.pdf`;
 
-                // Generate PDF Blob using html2pdf
                 const element = document.getElementById('pdf-letter-sheet');
                 
+                // html2pdf Options optimized for render accuracy
                 const opt = {
-                    margin:       0,
+                    margin:       [0.15, 0.15, 0.15, 0.15],
                     filename:     fileName,
                     image:        { type: 'jpeg', quality: 0.98 },
-                    html2canvas:  { scale: 2, useCORS: true, logging: false },
+                    html2canvas:  { 
+                        scale: 2, 
+                        useCORS: true, 
+                        logging: false,
+                        scrollX: 0,
+                        scrollY: 0,
+                        windowWidth: 800
+                    },
                     jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
                 };
 
-                // Generate worker
+                // Generate worker & Output PDF Blob
                 const worker = html2pdf().set(opt).from(element);
-                
-                // Get PDF Data URI & Save
                 const pdfBlob = await worker.output('blob');
                 const pdfUrl = URL.createObjectURL(pdfBlob);
 
-                // Trigger Download
+                // Save PDF File locally
                 worker.save();
 
                 // Save to LocalStorage History
                 saveToHistoryLog(soNumber, techName, unitSerial, fileName, dateStr);
 
-                // Open PDF for viewing / printing
-                openPDFForPrint(pdfUrl, fileName);
+                // Open in new window for direct print preview
+                openPDFForPrint(pdfUrl);
 
-                // Confetti celebration
                 if (typeof confetti === 'function') {
-                    confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+                    confetti({ particleCount: 90, spread: 60, origin: { y: 0.6 } });
                 }
 
                 showToast("Checklist Submitted & PDF Generated Successfully!", "success");
 
-                // Post-Submission Reset (Keep Technician Name)
+                // Reset form post submit while keeping Technician Name
                 resetFormPostSubmit();
 
             } catch (err) {
@@ -1076,11 +1043,9 @@
             document.getElementById('pdf-val-tech').innerText = techName;
             document.getElementById('pdf-val-unit').innerText = unitSerial;
             
-            // Format date nicely
             const d = new Date(dateStr || Date.now());
             document.getElementById('pdf-val-date').innerText = d.toLocaleString();
 
-            // Populate Checklist items in PDF
             const pdfChecklist = document.getElementById('pdf-checklist-grid');
             pdfChecklist.innerHTML = '';
 
@@ -1091,8 +1056,8 @@
                 const state = itemStates[itemNum] || { status: 'pass', comment: '' };
                 if (state.status === 'fail') hasFails = true;
 
-                let badgeHtml = '<span style="color: #16a34a; font-weight:700;">[✓ PASS]</span>';
-                if (state.status === 'fail') badgeHtml = '<span style="color: #dc2626; font-weight:700;">[✗ FAIL]</span>';
+                let badgeHtml = '<span style="color: #16a34a; font-weight:700;">[PASS]</span>';
+                if (state.status === 'fail') badgeHtml = '<span style="color: #dc2626; font-weight:700;">[FAIL]</span>';
                 if (state.status === 'na') badgeHtml = '<span style="color: #64748b; font-weight:700;">[N/A]</span>';
 
                 const cell = document.createElement('div');
@@ -1109,7 +1074,6 @@
                 pdfChecklist.appendChild(cell);
             });
 
-            // Set Overall status badge
             const overallElem = document.getElementById('pdf-val-overall');
             if (hasFails) {
                 overallElem.innerText = "DEFECTS DETECTED";
@@ -1119,7 +1083,7 @@
                 overallElem.style.color = "#16a34a";
             }
 
-            // Populate 8 Photos in strictly 2" x 2" boxes grid
+            // Populate 8 Photo Slots into printable sheet
             const pdfPhotosDiv = document.getElementById('pdf-photos-container');
             pdfPhotosDiv.innerHTML = '';
 
@@ -1138,7 +1102,7 @@
                 } else {
                     cell.innerHTML = `
                         <div style="height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; font-size:7pt; text-align:center; padding:4px;">
-                            <span>No Photo</span>
+                            <span>No Image</span>
                             <span style="font-size:5.5pt; color:#cbd5e1;">Slot ${slotId}</span>
                         </div>
                         <div class="pdf-photo-label">${slot.caption}</div>
@@ -1147,7 +1111,7 @@
                 pdfPhotosDiv.appendChild(cell);
             });
 
-            // Populate signature image
+            // Populate Signature image
             const sigImg = document.getElementById('pdf-val-sig');
             if (sigCanvas && !isSignatureEmpty()) {
                 sigImg.src = sigCanvas.toDataURL();
@@ -1157,8 +1121,7 @@
             }
         }
 
-        function openPDFForPrint(pdfBlobUrl, fileName) {
-            // Open window with iframe for immediate print capability
+        function openPDFForPrint(pdfBlobUrl) {
             const printWin = window.open(pdfBlobUrl, '_blank');
             if (!printWin) {
                 showToast("Pop-up blocked. PDF downloaded directly.", "info");
@@ -1166,39 +1129,33 @@
         }
 
         /* ==========================================================================
-           7. POST-SUBMISSION RESET & LOCAL STORAGE HISTORY
+           7. LOCAL STORAGE & RESET PROCEDURE
            ========================================================================== */
         function resetFormPostSubmit() {
-            // Reset checklist states
             itemStates = {};
             CHECKLIST_ITEMS.forEach((_, idx) => {
                 itemStates[idx + 1] = { status: null, comment: '' };
             });
             renderChecklist();
 
-            // Clear photos
             photoData = {};
             renderPhotoSlots();
 
-            // Clear inputs EXCEPT tech name
             document.getElementById('so-number').value = '';
             document.getElementById('unit-serial').value = '';
             initDateTime();
 
-            // Clear signature
             clearSignature();
-
-            // Note: Technician name field `#tech-name` remains populated!
+            // Note: Technician Name `#tech-name` remains intact!
         }
 
         function confirmResetForm() {
-            if (confirm("Are you sure you want to reset all form fields? Technician name will be preserved.")) {
+            if (confirm("Reset all inspection inputs? Technician name will be preserved.")) {
                 resetFormPostSubmit();
                 showToast("Form reset successfully.", "info");
             }
         }
 
-        /* History Storage Management */
         function saveToHistoryLog(soNumber, techName, unitSerial, fileName, dateStr) {
             let history = JSON.parse(localStorage.getItem('lowes_qc_history') || '[]');
             const record = {
@@ -1212,8 +1169,8 @@
                 photoCount: Object.keys(photoData).length
             };
 
-            history.unshift(record); // Add to top
-            if (history.length > 30) history.pop(); // Keep last 30
+            history.unshift(record);
+            if (history.length > 30) history.pop();
             localStorage.setItem('lowes_qc_history', JSON.stringify(history));
         }
 
@@ -1228,7 +1185,7 @@
                 list.innerHTML = `
                     <div class="text-center py-8 text-slate-400">
                         <i class="fa-solid fa-folder-open text-3xl mb-2 opacity-50"></i>
-                        <p class="text-sm">No saved inspection history found in local storage.</p>
+                        <p class="text-sm">No saved inspection history in local storage.</p>
                     </div>
                 `;
                 return;
@@ -1250,7 +1207,7 @@
                     </div>
                     <div class="text-right">
                         <span class="text-xs font-mono font-medium text-emerald-600 dark:text-emerald-400 block">${item.fileName}</span>
-                        <span class="text-[10px] text-slate-400">${item.photoCount}/8 Photos Attached</span>
+                        <span class="text-[10px] text-slate-400">${item.photoCount}/8 Photos</span>
                     </div>
                 `;
                 list.appendChild(card);
@@ -1265,12 +1222,12 @@
             if (confirm("Clear all local inspection history logs?")) {
                 localStorage.removeItem('lowes_qc_history');
                 openHistoryModal();
-                showToast("History cleared.", "info");
+                showToast("History log cleared.", "info");
             }
         }
 
         /* ==========================================================================
-           8. UTILITIES & THEME TOGGLE
+           8. THEME & TOAST UTILITIES
            ========================================================================== */
         function toggleDarkMode() {
             document.documentElement.classList.toggle('dark');
@@ -1298,7 +1255,6 @@
             }
         }
 
-        // Lightweight Toast Alert system
         function showToast(message, type = 'info') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
@@ -1320,12 +1276,10 @@
 
             container.appendChild(toast);
 
-            // Animate in
             requestAnimationFrame(() => {
                 toast.classList.remove('translate-y-2', 'opacity-0');
             });
 
-            // Remove after 3.5s
             setTimeout(() => {
                 toast.classList.add('opacity-0', 'translate-y-2');
                 setTimeout(() => toast.remove(), 300);
