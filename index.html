@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Inline Quality Checks - Lowe's</title>
+    
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -12,29 +13,22 @@
             theme: {
                 extend: {
                     colors: {
-                        brand: {
-                            50: '#eff6ff',
-                            100: '#dbeafe',
-                            500: '#1e40af',
-                            600: '#1d4ed8',
-                            700: '#1e3a8a',
-                            800: '#0f2942',
-                            900: '#0a192f'
-                        },
                         lowes: {
                             blue: '#004990',
                             navy: '#00205b',
                             accent: '#0072ce',
-                            light: '#f4f7fa'
+                            light: '#f4f7fa',
+                            dark: '#0a192f'
                         }
                     }
                 }
             }
         }
     </script>
+    
     <!-- FontAwesome 6 CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- html2pdf.js CDN -->
+    <!-- html2pdf.js Bundle CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <!-- Canvas Confetti CDN -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -42,88 +36,33 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
         
-        body {
-            font-family: 'Inter', sans-serif;
+        * {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
             -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
             touch-action: manipulation;
         }
 
-        /* Custom scrollbars for tablet */
+        /* Custom Scrollbars */
         ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
+            width: 6px;
+            height: 6px;
         }
         ::-webkit-scrollbar-track {
             background: rgba(0,0,0,0.05);
         }
         ::-webkit-scrollbar-thumb {
-            background: rgba(0,0,0,0.2);
-            border-radius: 4px;
+            background: rgba(0,0,0,0.25);
+            border-radius: 3px;
         }
 
-        /* Signature Canvas styling */
+        /* Canvas signature stylus optimization */
         .sig-canvas {
             touch-action: none;
             background-color: #ffffff;
             cursor: crosshair;
-        }
-
-        /* Strictly formatted PDF Printable Layout Container (Renderable fixed box to avoid blank PDF bug) */
-        #pdf-letter-sheet {
-            position: fixed;
-            left: 0;
-            top: 0;
-            z-index: -9999;
-            width: 790px;
-            padding: 18px 22px;
-            box-sizing: border-box;
-            background: #ffffff;
-            color: #0f172a;
-            font-family: 'Inter', sans-serif;
-            font-size: 8.5pt;
-            line-height: 1.25;
-            opacity: 1;
-            pointer-events: none;
-            box-shadow: none;
-        }
-
-        .pdf-grid-2in {
-            display: grid;
-            grid-template-columns: repeat(4, 180px);
-            gap: 10px;
-            justify-content: center;
-        }
-
-        .pdf-photo-cell {
-            width: 180px;
-            height: 160px;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
-            overflow: hidden;
-            position: relative;
-            background: #f8fafc;
-        }
-
-        .pdf-photo-cell img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .pdf-photo-label {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: rgba(0, 32, 91, 0.88);
-            color: #ffffff;
-            font-size: 6.5pt;
-            font-weight: 600;
-            padding: 2px 4px;
-            text-align: center;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
         }
 
         /* Pulse animation for active camera stream */
@@ -137,45 +76,52 @@
         }
     </style>
 </head>
-<body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-200 antialiased pb-16">
+<body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-full flex flex-col transition-colors duration-200 antialiased selection:bg-blue-500 selection:text-white pb-12">
 
     <!-- Top Navigation Header -->
-    <header class="sticky top-0 z-30 bg-lowes-navy dark:bg-slate-950 text-white shadow-md border-b border-blue-900/50">
+    <header class="sticky top-0 z-30 bg-lowes-navy dark:bg-slate-950 text-white shadow-lg border-b border-blue-900/50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div class="flex items-center space-x-3">
-                <div class="bg-white/10 p-2 rounded-lg flex items-center justify-center">
-                    <i class="fa-solid font-bold fa-clipboard-check text-blue-300 text-xl"></i>
+                <div class="bg-white/10 p-2 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                    <i class="fa-solid fa-clipboard-check text-blue-300 text-xl"></i>
                 </div>
                 <div>
-                    <h1 class="text-lg sm:text-xl font-bold tracking-tight text-white leading-tight">Inline Quality Checks</h1>
-                    <p class="text-xs text-blue-200 font-medium">Lowe's Dedicated Mobile Inspection Platform</p>
+                    <h1 class="text-base sm:text-lg font-bold tracking-tight text-white leading-tight">Inline Quality Checks</h1>
+                    <p class="text-[11px] text-blue-200 font-medium hidden sm:block">Lowe's Dedicated Tablet Inspection Platform</p>
                 </div>
             </div>
 
+            <!-- Action Controls -->
             <div class="flex items-center space-x-2 sm:space-x-3">
-                <!-- History Drawer Trigger -->
+                <!-- Admin Setup Trigger -->
+                <button type="button" onclick="openAdminModal()" 
+                    class="inline-flex items-center space-x-1.5 bg-blue-800/80 hover:bg-blue-700 text-blue-100 text-xs sm:text-sm font-semibold px-3 py-2 rounded-xl border border-blue-600/50 active:scale-95 transition-all shadow-sm">
+                    <i class="fa-solid fa-gear text-amber-300"></i>
+                    <span class="hidden md:inline">Admin Setup</span>
+                </button>
+
+                <!-- History Log Trigger -->
                 <button type="button" onclick="openHistoryModal()" 
-                    class="inline-flex items-center space-x-1.5 bg-blue-800/80 hover:bg-blue-700 text-blue-100 text-xs sm:text-sm font-medium px-3.5 py-2 rounded-lg border border-blue-600/50 active:scale-95 transition-all">
+                    class="inline-flex items-center space-x-1.5 bg-blue-800/80 hover:bg-blue-700 text-blue-100 text-xs sm:text-sm font-semibold px-3 py-2 rounded-xl border border-blue-600/50 active:scale-95 transition-all shadow-sm">
                     <i class="fa-solid fa-clock-rotate-left"></i>
                     <span>History</span>
                 </button>
 
-                <!-- Dark Mode Toggle -->
+                <!-- Theme Toggle -->
                 <button type="button" onclick="toggleDarkMode()" 
-                    class="p-2 rounded-lg bg-blue-900/50 text-blue-200 hover:text-white hover:bg-blue-800/80 transition-colors" title="Toggle Theme">
+                    class="p-2 rounded-xl bg-blue-900/50 text-blue-200 hover:text-white hover:bg-blue-800/80 transition-colors" title="Toggle Theme">
                     <i id="theme-toggle-icon" class="fa-solid fa-moon text-lg"></i>
                 </button>
             </div>
         </div>
     </header>
 
-    <!-- Main Content Area -->
-    <main class="max-w-5xl mx-auto px-3 sm:px-6 pt-4 sm:pt-6">
+    <!-- Main Content Layout -->
+    <main class="max-w-5xl mx-auto px-3 sm:px-6 pt-4 sm:pt-6 flex-1 w-full">
 
-        <!-- Form Card Container -->
         <form id="qc-form" onsubmit="handleFormSubmit(event)" class="space-y-6">
 
-            <!-- Card 1: Inspection & General Info -->
+            <!-- Card 1: Inspector & General Info -->
             <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 sm:p-6 transition-all">
                 <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-3 mb-4">
                     <h2 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -188,7 +134,7 @@
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
-                    <!-- Technician Name (Persistent) -->
+                    <!-- Technician / Tester Name (Persistent in localStorage) -->
                     <div>
                         <label for="tech-name" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
                             Technician / Tester <span class="text-red-500">*</span>
@@ -199,7 +145,7 @@
                             </span>
                             <input type="text" id="tech-name" required placeholder="e.g. Kartikkumar Patel" 
                                 oninput="saveTechNamePersistent()"
-                                class="w-full pl-9 pr-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-lowes-accent focus:border-transparent text-sm sm:text-base transition-all">
+                                class="w-full pl-9 pr-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-lowes-accent focus:border-transparent text-sm transition-all">
                         </div>
                         <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-1">Saved automatically for future checks</p>
                     </div>
@@ -214,9 +160,9 @@
                                 <i class="fa-solid fa-hashtag"></i>
                             </span>
                             <input type="text" id="so-number" required placeholder="e.g. SO12345" 
-                                class="w-full pl-9 pr-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-lowes-accent focus:border-transparent text-sm sm:text-base uppercase transition-all">
+                                class="w-full pl-9 pr-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-lowes-accent focus:border-transparent text-sm uppercase transition-all">
                         </div>
-                        <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-1">Used for PDF filename format</p>
+                        <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-1">Used for PDF format: SO_Tester.pdf</p>
                     </div>
 
                     <!-- Unit / Serial Number -->
@@ -229,7 +175,7 @@
                                 <i class="fa-solid fa-barcode"></i>
                             </span>
                             <input type="text" id="unit-serial" placeholder="e.g. LOWES-2026-99" 
-                                class="w-full pl-9 pr-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-lowes-accent focus:border-transparent text-sm sm:text-base transition-all">
+                                class="w-full pl-9 pr-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-lowes-accent focus:border-transparent text-sm transition-all">
                         </div>
                     </div>
 
@@ -243,37 +189,37 @@
                                 <i class="fa-solid fa-calendar-day"></i>
                             </span>
                             <input type="datetime-local" id="check-date" 
-                                class="w-full pl-9 pr-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-lowes-accent focus:border-transparent text-xs sm:text-sm transition-all">
+                                class="w-full pl-9 pr-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-lowes-accent focus:border-transparent text-xs transition-all">
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Card 2: 15 Quality Checklist Items -->
+            <!-- Card 2: Dynamic Quality Checklist Items -->
             <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 sm:p-6 transition-all">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-3 mb-4 gap-2">
                     <div>
                         <h2 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
                             <i class="fa-solid fa-list-check text-emerald-500"></i>
-                            Inline Quality Checklist (15 Standard Items)
+                            Inline Quality Checklist
                         </h2>
-                        <p class="text-xs text-slate-500 dark:text-slate-400">Tap status buttons to evaluate each requirement</p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Evaluate each requirement before final sign-off</p>
                     </div>
 
                     <div class="flex items-center gap-3">
                         <span id="checklist-progress" class="text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-3 py-1.5 rounded-lg">
-                            0 / 15 Evaluated
+                            0 / 0 Evaluated
                         </span>
                     </div>
                 </div>
 
-                <!-- Checklist Table / List Grid -->
+                <!-- Dynamic Checklist Container -->
                 <div id="checklist-container" class="space-y-3 sm:space-y-3.5">
                     <!-- Dynamic rendering via JS -->
                 </div>
             </div>
 
-            <!-- Card 3: 8 Photo Camera & Capture Section -->
+            <!-- Card 3: 8 Required Photo Captures Grid -->
             <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 sm:p-6 transition-all">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-3 mb-4 gap-2">
                     <div>
@@ -281,7 +227,7 @@
                             <i class="fa-solid fa-camera text-blue-500"></i>
                             Required Photos (8 Photos Grid)
                         </h2>
-                        <p class="text-xs text-slate-500 dark:text-slate-400">Capture or upload photos for each designated section</p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Capture or upload photos for all 8 designated sections</p>
                     </div>
 
                     <div class="flex items-center space-x-2">
@@ -295,7 +241,7 @@
                 <!-- Hidden file inputs for direct camera upload fallback -->
                 <div id="file-input-container" class="hidden"></div>
 
-                <!-- 8 Photo Slots Grid -->
+                <!-- 8 Photo Grid -->
                 <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4" id="photo-grid">
                     <!-- Photo cards injected dynamically by JS -->
                 </div>
@@ -330,7 +276,7 @@
             <!-- Form Action Footer -->
             <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
                 <p class="text-xs text-slate-500 dark:text-slate-400 text-center sm:text-left">
-                    Submitting will generate <strong class="text-slate-700 dark:text-slate-200">[SO_Number]_[Technician_Name].pdf</strong>, save to log history, and prompt PDF preview.
+                    Generates single-page PDF: <strong class="text-slate-700 dark:text-slate-200">[SO_Number]_[Tester_Name].pdf</strong>
                 </p>
 
                 <div class="flex items-center gap-3 w-full sm:w-auto">
@@ -350,10 +296,60 @@
         </form>
     </main>
 
-    <!-- Camera Modal (Live getUserMedia stream) -->
+    <!-- ADMIN PANEL MODAL -->
+    <div id="admin-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-3 sm:p-6">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-3xl border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col max-h-[90vh]">
+            <!-- Header -->
+            <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between bg-slate-50 dark:bg-slate-900 rounded-t-2xl">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-sliders text-amber-500 text-lg"></i>
+                    <h3 class="font-bold text-slate-900 dark:text-white text-base sm:text-lg">Admin Checklist Setup</h3>
+                </div>
+                <button type="button" onclick="closeAdminModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Toolbar Actions -->
+            <div class="p-3 bg-slate-100 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 flex flex-wrap items-center justify-between gap-2">
+                <button type="button" onclick="addAdminItem()" 
+                    class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-xl flex items-center gap-1.5 active:scale-95 transition-all">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Add New Check Point</span>
+                </button>
+
+                <button type="button" onclick="resetAdminChecklistToDefault()" 
+                    class="px-3 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-semibold text-xs rounded-xl flex items-center gap-1.5 transition-all">
+                    <i class="fa-solid fa-rotate-left"></i>
+                    <span>Reset to 15 Defaults</span>
+                </button>
+            </div>
+
+            <!-- Checklist Items Manager List -->
+            <div class="p-4 overflow-y-auto flex-1 space-y-3" id="admin-items-list">
+                <!-- Items dynamically rendered -->
+            </div>
+
+            <!-- Footer Save Bar -->
+            <div class="p-4 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between bg-slate-50 dark:bg-slate-900 rounded-b-2xl">
+                <p class="text-xs text-slate-500 dark:text-slate-400">Changes update the inspection form in real time.</p>
+                
+                <div class="flex items-center space-x-2">
+                    <button type="button" onclick="closeAdminModal()" class="px-4 py-2.5 text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white text-xs font-semibold rounded-xl">
+                        Cancel
+                    </button>
+                    <button type="button" onclick="saveAdminChecklist()" class="px-5 py-2.5 bg-lowes-blue hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-md active:scale-95 transition-all flex items-center gap-1.5">
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        <span>Save Checklist</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Camera Stream Modal -->
     <div id="camera-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-3 sm:p-6">
         <div class="bg-slate-900 rounded-2xl w-full max-w-lg border border-slate-800 shadow-2xl overflow-hidden flex flex-col">
-            <!-- Modal Header -->
             <div class="px-4 py-3 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
                 <div class="flex items-center space-x-2">
                     <span class="w-2.5 h-2.5 bg-red-500 rounded-full recording-pulse"></span>
@@ -364,25 +360,21 @@
                 </button>
             </div>
 
-            <!-- Video Stream Container -->
             <div class="relative bg-black flex-1 min-h-[280px] sm:min-h-[340px] flex items-center justify-center overflow-hidden">
                 <video id="camera-video" autoplay playsinline class="w-full h-full object-cover"></video>
                 <canvas id="camera-canvas" class="hidden"></canvas>
                 
-                <!-- Camera Overlay Target Frame -->
                 <div class="absolute inset-0 border-2 border-white/20 pointer-events-none flex items-center justify-center">
                     <div class="w-52 h-52 border-2 border-dashed border-emerald-400/70 rounded-lg"></div>
                 </div>
             </div>
 
-            <!-- Modal Controls -->
             <div class="p-4 bg-slate-950 border-t border-slate-800 flex items-center justify-between">
-                <button type="button" id="btn-switch-cam" onclick="switchCameraFacing()" 
-                    class="p-3 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl transition-colors">
+                <button type="button" onclick="switchCameraFacing()" 
+                    class="p-3 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl transition-colors" title="Switch Front/Rear Camera">
                     <i class="fa-solid fa-camera-rotate text-lg"></i>
                 </button>
 
-                <!-- Snapshot Capture Button -->
                 <button type="button" onclick="takeSnapshotFromStream()" 
                     class="w-16 h-16 bg-white border-4 border-slate-300 rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform">
                     <div class="w-12 h-12 bg-red-600 rounded-full"></div>
@@ -410,7 +402,7 @@
             </div>
 
             <div class="p-4 overflow-y-auto flex-1 space-y-3" id="history-list">
-                <!-- History Items dynamically populated -->
+                <!-- Dynamic history list -->
             </div>
 
             <div class="p-3 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900 rounded-b-2xl">
@@ -427,67 +419,11 @@
     <!-- Toast Notification Container -->
     <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
-    <!-- PDF PRINTABLE SHEET (Fixed in layout viewport to allow html2canvas proper pixel sampling) -->
-    <div id="pdf-letter-sheet">
-        <!-- Header Section -->
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #00205b; padding-bottom: 6px; margin-bottom: 8px;">
-            <div>
-                <h1 style="font-size: 13pt; font-weight: 800; color: #00205b; margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">Inline Quality Checks</h1>
-                <p style="font-size: 8pt; color: #0072ce; font-weight: 700; margin: 1px 0 0 0;">Lowe's Quality Assurance Inspection Report</p>
-            </div>
-            <div style="text-align: right; font-size: 7.5pt; color: #334155;">
-                <div><strong style="color: #0f172a;">Date/Time:</strong> <span id="pdf-val-date"></span></div>
-                <div><strong style="color: #0f172a;">Overall Result:</strong> <span id="pdf-val-overall" style="color: #16a34a; font-weight: 700;">PASSED</span></div>
-            </div>
-        </div>
-
-        <!-- Info Grid Box -->
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; background-color: #f1f5f9; padding: 6px 10px; border-radius: 4px; border: 1px solid #cbd5e1; margin-bottom: 8px; font-size: 7.5pt;">
-            <div><strong style="color: #475569;">SO Number:</strong> <span id="pdf-val-so" style="font-weight: 700; color: #0f172a;"></span></div>
-            <div><strong style="color: #475569;">Technician:</strong> <span id="pdf-val-tech" style="font-weight: 700; color: #0f172a;"></span></div>
-            <div><strong style="color: #475569;">Serial #:</strong> <span id="pdf-val-unit" style="font-weight: 600; color: #0f172a;">N/A</span></div>
-        </div>
-
-        <!-- Checklist 15 items in 2-column layout -->
-        <div style="margin-bottom: 10px;">
-            <div style="font-size: 8pt; font-weight: 700; color: #00205b; margin-bottom: 4px; border-bottom: 1px solid #cbd5e1; padding-bottom: 2px; text-transform: uppercase;">
-                Quality Checklist Items (15 Standard Checks)
-            </div>
-            <div id="pdf-checklist-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 3px 12px; font-size: 6.8pt; line-height: 1.2;">
-                <!-- Populated dynamically -->
-            </div>
-        </div>
-
-        <!-- 8 Photos Section Grid (2" x 2" Ratio Boxes) -->
-        <div style="margin-bottom: 8px;">
-            <div style="font-size: 8pt; font-weight: 700; color: #00205b; margin-bottom: 4px; border-bottom: 1px solid #cbd5e1; padding-bottom: 2px; text-transform: uppercase;">
-                Inspection Photo Evidence (8 Photos Grid)
-            </div>
-            <div id="pdf-photos-container" class="pdf-grid-2in">
-                <!-- 8 photo boxes generated dynamically -->
-            </div>
-        </div>
-
-        <!-- Signature & Footer Signoff -->
-        <div style="display: flex; justify-content: space-between; align-items: flex-end; border-top: 1px solid #cbd5e1; padding-top: 6px; margin-top: 6px;">
-            <div style="font-size: 7pt; color: #64748b; max-width: 450px;">
-                <p style="margin: 0; font-weight: 500;">Verified and inspected according to Lowe's Inline Quality Assurance Standards.</p>
-                <p style="margin: 1px 0 0 0;">Report automatically generated via Dedicated Tablet Quality Application.</p>
-            </div>
-            <div style="text-align: center; width: 170px;">
-                <div style="height: 40px; border-bottom: 1.5px dashed #94a3b8; display: flex; align-items: center; justify-content: center;">
-                    <img id="pdf-val-sig" src="" style="max-height: 38px; max-width: 160px; object-fit: contain; display: none;" alt="Signature">
-                </div>
-                <div style="font-size: 6.5pt; color: #334155; font-weight: 700; margin-top: 2px; uppercase;">Technician Sign-off</div>
-            </div>
-        </div>
-    </div>
-
     <script>
         /* ==========================================================================
            1. CONSTANTS & INITIAL STATE
            ========================================================================== */
-        const CHECKLIST_ITEMS = [
+        const DEFAULT_CHECKLIST_ITEMS = [
             "Doors and stickers are torqued and aligned.",
             "Shelves and retractors are installed properly.",
             "The bottom door lock is functional.",
@@ -516,9 +452,10 @@
             { id: 8, title: "Photo 8: Final Unit", caption: "Screen Flush & Signifi Backer" }
         ];
 
-        // Global State
+        // Global Application State
         let itemStates = {}; 
         let photoData = {};  
+        let adminDraftItems = [];
         let activePhotoSlotIndex = null;
         let mediaStream = null;
         let currentFacingMode = 'environment';
@@ -541,15 +478,18 @@
 
         function initDateTime() {
             const dateInput = document.getElementById('check-date');
-            const now = new Date();
-            const localIso = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
-            dateInput.value = localIso;
+            if (dateInput) {
+                const now = new Date();
+                const localIso = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
+                dateInput.value = localIso;
+            }
         }
 
         function loadPersistentTechName() {
             const savedName = localStorage.getItem('lowes_qc_tech_name');
             if (savedName) {
-                document.getElementById('tech-name').value = savedName;
+                const techInput = document.getElementById('tech-name');
+                if (techInput) techInput.value = savedName;
             }
         }
 
@@ -558,14 +498,30 @@
             localStorage.setItem('lowes_qc_tech_name', val);
         }
 
+        function getActiveChecklistItems() {
+            const stored = localStorage.getItem('lowes_checklist_items');
+            if (stored) {
+                try {
+                    const parsed = JSON.parse(stored);
+                    if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+                } catch(e) {
+                    console.error("Failed to parse checklist items:", e);
+                }
+            }
+            return [...DEFAULT_CHECKLIST_ITEMS];
+        }
+
         /* ==========================================================================
            3. CHECKLIST RENDER & EVENTS
            ========================================================================== */
         function renderChecklist() {
             const container = document.getElementById('checklist-container');
+            if (!container) return;
             container.innerHTML = '';
 
-            CHECKLIST_ITEMS.forEach((itemText, idx) => {
+            const currentItems = getActiveChecklistItems();
+
+            currentItems.forEach((itemText, idx) => {
                 const itemNum = idx + 1;
                 if (!itemStates[itemNum]) {
                     itemStates[itemNum] = { status: null, comment: '' };
@@ -585,7 +541,7 @@
                             </span>
                             <div class="flex-1">
                                 <p class="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100 leading-snug">
-                                    ${itemText}
+                                    ${escapeHtml(itemText)}
                                 </p>
                             </div>
                         </div>
@@ -625,7 +581,7 @@
 
                     <div class="mt-2.5 pt-2 border-t border-slate-200/60 dark:border-slate-800 flex items-center space-x-2">
                         <i class="fa-regular fa-comment text-slate-400 text-xs"></i>
-                        <input type="text" value="${itemStates[itemNum].comment || ''}" 
+                        <input type="text" value="${escapeHtml(itemStates[itemNum].comment || '')}" 
                             placeholder="Add notes / defect description (optional)..."
                             oninput="setChecklistComment(${itemNum}, this.value)"
                             class="w-full bg-transparent text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none">
@@ -650,14 +606,19 @@
         }
 
         function updateChecklistProgress() {
+            const items = getActiveChecklistItems();
             let evaluatedCount = 0;
-            Object.values(itemStates).forEach(val => {
-                if (val.status !== null) evaluatedCount++;
+            items.forEach((_, idx) => {
+                const itemNum = idx + 1;
+                if (itemStates[itemNum] && itemStates[itemNum].status !== null) {
+                    evaluatedCount++;
+                }
             });
+
             const badge = document.getElementById('checklist-progress');
             if (badge) {
-                badge.innerText = `${evaluatedCount} / 15 Evaluated`;
-                if (evaluatedCount === 15) {
+                badge.innerText = `${evaluatedCount} / ${items.length} Evaluated`;
+                if (evaluatedCount === items.length && items.length > 0) {
                     badge.className = "text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/40 px-3 py-1.5 rounded-lg";
                 } else {
                     badge.className = "text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-3 py-1.5 rounded-lg";
@@ -666,11 +627,125 @@
         }
 
         /* ==========================================================================
-           4. 8 PHOTO CAMERA & GALLERY
+           4. ADMIN PANEL SETUP LOGIC
+           ========================================================================== */
+        function openAdminModal() {
+            adminDraftItems = [...getActiveChecklistItems()];
+            renderAdminDraftList();
+            document.getElementById('admin-modal').classList.remove('hidden');
+        }
+
+        function closeAdminModal() {
+            document.getElementById('admin-modal').classList.add('hidden');
+        }
+
+        function renderAdminDraftList() {
+            const list = document.getElementById('admin-items-list');
+            if (!list) return;
+            list.innerHTML = '';
+
+            if (adminDraftItems.length === 0) {
+                list.innerHTML = `
+                    <div class="text-center py-8 text-slate-400">
+                        <i class="fa-solid fa-list-ol text-3xl mb-2 opacity-50"></i>
+                        <p class="text-sm">No checklist items defined. Click "Add New Check Point" or "Reset to 15 Defaults".</p>
+                    </div>
+                `;
+                return;
+            }
+
+            adminDraftItems.forEach((itemText, idx) => {
+                const itemRow = document.createElement('div');
+                itemRow.className = "flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl";
+                
+                itemRow.innerHTML = `
+                    <span class="w-6 h-6 rounded-lg bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold text-xs flex items-center justify-center flex-shrink-0">
+                        ${idx + 1}
+                    </span>
+
+                    <input type="text" value="${escapeHtml(itemText)}" 
+                        onchange="updateAdminDraftText(${idx}, this.value)"
+                        class="flex-1 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-lowes-accent focus:outline-none">
+
+                    <div class="flex items-center space-x-1 flex-shrink-0">
+                        <button type="button" onclick="moveAdminItem(${idx}, -1)" ${idx === 0 ? 'disabled' : ''}
+                            class="p-2 text-slate-500 hover:text-slate-800 dark:hover:text-white disabled:opacity-30 disabled:pointer-events-none rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800">
+                            <i class="fa-solid fa-arrow-up text-xs"></i>
+                        </button>
+
+                        <button type="button" onclick="moveAdminItem(${idx}, 1)" ${idx === adminDraftItems.length - 1 ? 'disabled' : ''}
+                            class="p-2 text-slate-500 hover:text-slate-800 dark:hover:text-white disabled:opacity-30 disabled:pointer-events-none rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800">
+                            <i class="fa-solid fa-arrow-down text-xs"></i>
+                        </button>
+
+                        <button type="button" onclick="deleteAdminItem(${idx})" 
+                            class="p-2 text-red-500 hover:text-red-700 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/40">
+                            <i class="fa-solid fa-trash-can text-xs"></i>
+                        </button>
+                    </div>
+                `;
+                list.appendChild(itemRow);
+            });
+        }
+
+        function updateAdminDraftText(idx, newText) {
+            if (adminDraftItems[idx] !== undefined) {
+                adminDraftItems[idx] = newText.trim();
+            }
+        }
+
+        function addAdminItem() {
+            adminDraftItems.push(`New Quality Check Point #${adminDraftItems.length + 1}`);
+            renderAdminDraftList();
+            
+            // Scroll to bottom
+            const list = document.getElementById('admin-items-list');
+            if (list) list.scrollTop = list.scrollHeight;
+        }
+
+        function deleteAdminItem(idx) {
+            adminDraftItems.splice(idx, 1);
+            renderAdminDraftList();
+        }
+
+        function moveAdminItem(idx, direction) {
+            const targetIdx = idx + direction;
+            if (targetIdx < 0 || targetIdx >= adminDraftItems.length) return;
+            const temp = adminDraftItems[idx];
+            adminDraftItems[idx] = adminDraftItems[targetIdx];
+            adminDraftItems[targetIdx] = temp;
+            renderAdminDraftList();
+        }
+
+        function resetAdminChecklistToDefault() {
+            if (confirm("Reset checklist setup back to original 15 default Lowe's quality items?")) {
+                adminDraftItems = [...DEFAULT_CHECKLIST_ITEMS];
+                renderAdminDraftList();
+            }
+        }
+
+        function saveAdminChecklist() {
+            const cleaned = adminDraftItems.map(item => item.trim()).filter(item => item.length > 0);
+            if (cleaned.length === 0) {
+                showToast("Checklist cannot be empty. Add at least one item.", "error");
+                return;
+            }
+
+            localStorage.setItem('lowes_checklist_items', JSON.stringify(cleaned));
+            closeAdminModal();
+            itemStates = {};
+            renderChecklist();
+            showToast("Customized checklist saved successfully!", "success");
+        }
+
+        /* ==========================================================================
+           5. 8 PHOTO CAPTURE GRID & CAMERA
            ========================================================================== */
         function renderPhotoSlots() {
             const photoGrid = document.getElementById('photo-grid');
             const fileContainer = document.getElementById('file-input-container');
+            if (!photoGrid || !fileContainer) return;
+
             photoGrid.innerHTML = '';
             fileContainer.innerHTML = '';
 
@@ -707,7 +782,7 @@
                                 : '<span class="text-[10px] text-slate-400 font-mono">Slot ' + slotId + '</span>'
                             }
                         </div>
-                        <p class="text-[10px] text-slate-500 dark:text-slate-400 mb-2 truncate" title="${slot.caption}">${slot.caption}</p>
+                        <p class="text-[10px] text-slate-500 dark:text-slate-400 mb-2 truncate" title="${escapeHtml(slot.caption)}">${escapeHtml(slot.caption)}</p>
 
                         <div class="w-full aspect-square rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center relative group">
                             ${hasImage 
@@ -864,10 +939,11 @@
         }
 
         /* ==========================================================================
-           5. DIGITAL SIGNATURE CANVAS
+           6. DIGITAL SIGNATURE CANVAS
            ========================================================================== */
         function initSignatureCanvas() {
             sigCanvas = document.getElementById('sig-canvas');
+            if (!sigCanvas) return;
             sigCtx = sigCanvas.getContext('2d');
             resizeCanvas();
 
@@ -896,7 +972,7 @@
                 sigCanvas.dispatchEvent(mouseEvent);
             }, { passive: false });
 
-            sigCanvas.addEventListener('touchend', (e) => {
+            sigCanvas.addEventListener('touchend', () => {
                 const mouseEvent = new MouseEvent('mouseup', {});
                 sigCanvas.dispatchEvent(mouseEvent);
             });
@@ -912,7 +988,8 @@
 
         function startDrawingSig(e) {
             isDrawingSig = true;
-            document.getElementById('sig-placeholder').style.display = 'none';
+            const placeholder = document.getElementById('sig-placeholder');
+            if (placeholder) placeholder.style.display = 'none';
             const rect = sigCanvas.getBoundingClientRect();
             sigCtx.beginPath();
             sigCtx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
@@ -949,7 +1026,7 @@
         }
 
         /* ==========================================================================
-           6. PDF GENERATION & PREVIEW (FIXED BLANK PDF ISSUE)
+           7. NON-BLANK SINGLE-PAGE PDF GENERATION ENGINE
            ========================================================================== */
         async function handleFormSubmit(event) {
             event.preventDefault();
@@ -980,45 +1057,15 @@
             submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Generating PDF...';
 
             try {
-                // Populate Printable Container DOM
-                populatePDFSheet(techName, soNumber, unitSerial, dateStr);
+                // Generate PDF and launch print preview
+                await generateAndExportPDF(techName, soNumber, unitSerial, dateStr);
 
-                // Format filename: [SO_Number]_[Technician_Name].pdf
+                // Save record to LocalStorage History
                 const sanitizedSO = soNumber.replace(/[^a-zA-Z0-9]/g, '');
                 const sanitizedTech = techName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
                 const fileName = `${sanitizedSO}_${sanitizedTech}.pdf`;
 
-                const element = document.getElementById('pdf-letter-sheet');
-                
-                // html2pdf Options optimized for render accuracy
-                const opt = {
-                    margin:       [0.15, 0.15, 0.15, 0.15],
-                    filename:     fileName,
-                    image:        { type: 'jpeg', quality: 0.98 },
-                    html2canvas:  { 
-                        scale: 2, 
-                        useCORS: true, 
-                        logging: false,
-                        scrollX: 0,
-                        scrollY: 0,
-                        windowWidth: 800
-                    },
-                    jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
-                };
-
-                // Generate worker & Output PDF Blob
-                const worker = html2pdf().set(opt).from(element);
-                const pdfBlob = await worker.output('blob');
-                const pdfUrl = URL.createObjectURL(pdfBlob);
-
-                // Save PDF File locally
-                worker.save();
-
-                // Save to LocalStorage History
                 saveToHistoryLog(soNumber, techName, unitSerial, fileName, dateStr);
-
-                // Open in new window for direct print preview
-                openPDFForPrint(pdfUrl);
 
                 if (typeof confetti === 'function') {
                     confetti({ particleCount: 90, spread: 60, origin: { y: 0.6 } });
@@ -1026,7 +1073,7 @@
 
                 showToast("Checklist Submitted & PDF Generated Successfully!", "success");
 
-                // Reset form post submit while keeping Technician Name
+                // Reset form fields while preserving Technician Name
                 resetFormPostSubmit();
 
             } catch (err) {
@@ -1038,104 +1085,208 @@
             }
         }
 
-        function populatePDFSheet(techName, soNumber, unitSerial, dateStr) {
-            document.getElementById('pdf-val-so').innerText = soNumber;
-            document.getElementById('pdf-val-tech').innerText = techName;
-            document.getElementById('pdf-val-unit').innerText = unitSerial;
+        async function generateAndExportPDF(techName, soNumber, unitSerial, dateStr) {
+            // STRICT PDF FILENAME FORMAT: [SO_Number]_[Tester_Name].pdf
+            const sanitizedSO = soNumber.trim().replace(/[^a-zA-Z0-9]/g, '');
+            const sanitizedTech = techName.trim().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+            const pdfFileName = `${sanitizedSO}_${sanitizedTech}.pdf`;
+
+            // Clean up old temporary containers if any exist
+            const oldTemp = document.getElementById('pdf-render-temp');
+            if (oldTemp) oldTemp.remove();
+
+            // Create explicit, visible DOM container for html2canvas to capture without blank PDF bug
+            const tempContainer = document.createElement('div');
+            tempContainer.id = 'pdf-render-temp';
             
-            const d = new Date(dateStr || Date.now());
-            document.getElementById('pdf-val-date').innerText = d.toLocaleString();
+            tempContainer.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 780px;
+                background-color: #ffffff;
+                color: #000000;
+                z-index: 999999;
+                font-family: 'Inter', system-ui, -apple-system, sans-serif;
+                padding: 16px 20px;
+                box-sizing: border-box;
+                visibility: visible;
+                opacity: 1;
+                pointer-events: none;
+            `;
 
-            const pdfChecklist = document.getElementById('pdf-checklist-grid');
-            pdfChecklist.innerHTML = '';
-
-            let hasFails = false;
-
-            CHECKLIST_ITEMS.forEach((itemText, idx) => {
+            // Determine overall result
+            let failCount = 0;
+            const items = getActiveChecklistItems();
+            items.forEach((_, idx) => {
                 const itemNum = idx + 1;
-                const state = itemStates[itemNum] || { status: 'pass', comment: '' };
-                if (state.status === 'fail') hasFails = true;
-
-                let badgeHtml = '<span style="color: #16a34a; font-weight:700;">[PASS]</span>';
-                if (state.status === 'fail') badgeHtml = '<span style="color: #dc2626; font-weight:700;">[FAIL]</span>';
-                if (state.status === 'na') badgeHtml = '<span style="color: #64748b; font-weight:700;">[N/A]</span>';
-
-                const cell = document.createElement('div');
-                cell.style.cssText = "padding: 2px 0; border-bottom: 0.5px solid #f1f5f9; display: flex; justify-content: space-between; align-items: flex-start;";
-                
-                const commentSuffix = state.comment ? ` <i style="color:#64748b;">(${state.comment})</i>` : '';
-
-                cell.innerHTML = `
-                    <div style="flex:1; padding-right: 4px;">
-                        <strong style="color:#0f172a;">${itemNum}.</strong> ${itemText}${commentSuffix}
-                    </div>
-                    <div style="flex-shrink:0;">${badgeHtml}</div>
-                `;
-                pdfChecklist.appendChild(cell);
+                if (itemStates[itemNum] && itemStates[itemNum].status === 'fail') {
+                    failCount++;
+                }
             });
 
-            const overallElem = document.getElementById('pdf-val-overall');
-            if (hasFails) {
-                overallElem.innerText = "DEFECTS DETECTED";
-                overallElem.style.color = "#dc2626";
-            } else {
-                overallElem.innerText = "PASSED";
-                overallElem.style.color = "#16a34a";
-            }
+            const overallStatusHtml = failCount > 0 
+                ? `<span style="color: #dc2626; font-weight: 800;">DEFECTS DETECTED (${failCount})</span>`
+                : `<span style="color: #16a34a; font-weight: 800;">PASSED</span>`;
 
-            // Populate 8 Photo Slots into printable sheet
-            const pdfPhotosDiv = document.getElementById('pdf-photos-container');
-            pdfPhotosDiv.innerHTML = '';
+            // Signature Data URL
+            const sigDataUrl = (!isSignatureEmpty() && sigCanvas) ? sigCanvas.toDataURL('image/png') : '';
 
+            // Build Checklist HTML
+            let checklistItemsHtml = '';
+            items.forEach((itemText, idx) => {
+                const itemNum = idx + 1;
+                const state = itemStates[itemNum] || { status: 'pass', comment: '' };
+                
+                let badge = '<span style="color: #16a34a; font-weight: 700;">[PASS]</span>';
+                if (state.status === 'fail') badge = '<span style="color: #dc2626; font-weight: 700;">[FAIL]</span>';
+                if (state.status === 'na') badge = '<span style="color: #64748b; font-weight: 700;">[N/A]</span>';
+
+                const commentText = state.comment 
+                    ? `<div style="font-size: 5.5pt; color: #475569; font-style: italic;">Note: ${escapeHtml(state.comment)}</div>` 
+                    : '';
+
+                checklistItemsHtml += `
+                    <div style="padding: 2.5px 4px; border-bottom: 0.5px solid #e2e8f0; font-size: 6.5pt; line-height: 1.2; display: flex; justify-content: space-between; align-items: flex-start; break-inside: avoid;">
+                        <div style="flex: 1; padding-right: 4px;">
+                            <strong style="color: #00205b;">${itemNum}.</strong> ${escapeHtml(itemText)}
+                            ${commentText}
+                        </div>
+                        <div style="flex-shrink: 0; text-align: right;">${badge}</div>
+                    </div>
+                `;
+            });
+
+            // Build 8 Photo Grid HTML
+            let photosGridHtml = '';
             PHOTO_SLOTS.forEach(slot => {
                 const slotId = slot.id;
                 const imgSrc = photoData[slotId];
-
-                const cell = document.createElement('div');
-                cell.className = 'pdf-photo-cell';
-
+                
                 if (imgSrc) {
-                    cell.innerHTML = `
-                        <img src="${imgSrc}" alt="Photo ${slotId}">
-                        <div class="pdf-photo-label">${slot.caption}</div>
+                    photosGridHtml += `
+                        <div style="width: 175px; height: 135px; border: 1px solid #cbd5e1; border-radius: 4px; overflow: hidden; position: relative; background: #f8fafc; display: flex; flex-direction: column;">
+                            <img src="${imgSrc}" style="width: 100%; height: 112px; object-fit: cover; display: block;" alt="Slot ${slotId}">
+                            <div style="background: #00205b; color: #ffffff; font-size: 6pt; font-weight: 700; padding: 2px 4px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; height: 23px; line-height: 19px;">
+                                ${escapeHtml(slot.caption)}
+                            </div>
+                        </div>
                     `;
                 } else {
-                    cell.innerHTML = `
-                        <div style="height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; font-size:7pt; text-align:center; padding:4px;">
-                            <span>No Image</span>
-                            <span style="font-size:5.5pt; color:#cbd5e1;">Slot ${slotId}</span>
+                    photosGridHtml += `
+                        <div style="width: 175px; height: 135px; border: 1px dashed #cbd5e1; border-radius: 4px; overflow: hidden; position: relative; background: #f1f5f9; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                            <div style="color: #94a3b8; font-size: 6.5pt; text-align: center; margin-bottom: 12px;">No Photo Attached</div>
+                            <div style="position: absolute; bottom: 0; left: 0; right: 0; background: #64748b; color: #ffffff; font-size: 6pt; font-weight: 700; padding: 2px 4px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                ${escapeHtml(slot.caption)}
+                            </div>
                         </div>
-                        <div class="pdf-photo-label">${slot.caption}</div>
                     `;
                 }
-                pdfPhotosDiv.appendChild(cell);
             });
 
-            // Populate Signature image
-            const sigImg = document.getElementById('pdf-val-sig');
-            if (sigCanvas && !isSignatureEmpty()) {
-                sigImg.src = sigCanvas.toDataURL();
-                sigImg.style.display = 'block';
-            } else {
-                sigImg.style.display = 'none';
-            }
-        }
+            // Assemble complete single-page Letter document HTML
+            tempContainer.innerHTML = `
+                <!-- Document Header -->
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2.5px solid #00205b; padding-bottom: 4px; margin-bottom: 6px;">
+                    <div>
+                        <h1 style="font-size: 13pt; font-weight: 800; color: #00205b; margin: 0; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1;">Inline Quality Checks</h1>
+                        <p style="font-size: 7.5pt; color: #0072ce; font-weight: 700; margin: 2px 0 0 0;">Lowe's Quality Assurance Inspection Report</p>
+                    </div>
+                    <div style="text-align: right; font-size: 7.5pt; color: #1e293b; line-height: 1.3;">
+                        <div><strong>Date/Time:</strong> ${new Date(dateStr || Date.now()).toLocaleString()}</div>
+                        <div><strong>Overall Result:</strong> ${overallStatusHtml}</div>
+                    </div>
+                </div>
 
-        function openPDFForPrint(pdfBlobUrl) {
-            const printWin = window.open(pdfBlobUrl, '_blank');
-            if (!printWin) {
-                showToast("Pop-up blocked. PDF downloaded directly.", "info");
+                <!-- Info Grid Box -->
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; background: #f1f5f9; padding: 5px 10px; border-radius: 4px; border: 1px solid #cbd5e1; margin-bottom: 8px; font-size: 7.5pt;">
+                    <div><strong style="color: #475569;">SO Number:</strong> <span style="font-weight: 800; color: #0f172a;">${escapeHtml(soNumber)}</span></div>
+                    <div><strong style="color: #475569;">Technician / Tester:</strong> <span style="font-weight: 800; color: #0f172a;">${escapeHtml(techName)}</span></div>
+                    <div><strong style="color: #475569;">Serial / Unit #:</strong> <span style="font-weight: 700; color: #0f172a;">${escapeHtml(unitSerial)}</span></div>
+                </div>
+
+                <!-- Checklist Table Section -->
+                <div style="margin-bottom: 8px;">
+                    <div style="font-size: 7.5pt; font-weight: 800; color: #00205b; margin-bottom: 3px; border-bottom: 1px solid #00205b; padding-bottom: 1px; text-transform: uppercase;">
+                        Inline Quality Checklist (${items.length} Standard Items)
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2px 10px;">
+                        ${checklistItemsHtml}
+                    </div>
+                </div>
+
+                <!-- 8 Photo Grid Section (4 x 2) -->
+                <div style="margin-bottom: 8px;">
+                    <div style="font-size: 7.5pt; font-weight: 800; color: #00205b; margin-bottom: 4px; border-bottom: 1px solid #00205b; padding-bottom: 1px; text-transform: uppercase;">
+                        Photo Evidence Grid (8 Required Slots)
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(4, 175px); gap: 6px; justify-content: center;">
+                        ${photosGridHtml}
+                    </div>
+                </div>
+
+                <!-- Signature Sign-off Footer -->
+                <div style="display: flex; justify-content: space-between; align-items: flex-end; border-top: 1px solid #cbd5e1; padding-top: 4px; margin-top: 4px;">
+                    <div style="font-size: 6.5pt; color: #64748b; max-width: 480px; line-height: 1.2;">
+                        <p style="margin: 0; font-weight: 600;">Verified and inspected in compliance with Lowe's Inline Quality Standards.</p>
+                        <p style="margin: 1px 0 0 0;">Report automatically certified via Dedicated Inspection Platform.</p>
+                    </div>
+                    <div style="text-align: center; width: 170px;">
+                        <div style="height: 38px; border-bottom: 1.5px dashed #94a3b8; display: flex; align-items: center; justify-content: center;">
+                            ${sigDataUrl ? `<img src="${sigDataUrl}" style="max-height: 36px; max-width: 160px; object-fit: contain;" alt="Signature">` : '<span style="font-size: 6pt; color: #94a3b8;">[No Signature]</span>'}
+                        </div>
+                        <div style="font-size: 6pt; color: #334155; font-weight: 700; margin-top: 2px; text-transform: uppercase;">Technician Sign-off</div>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(tempContainer);
+
+            // Allow DOM paint cycle to complete
+            await new Promise(resolve => setTimeout(resolve, 150));
+
+            // html2pdf options tuned for single page Letter layout
+            const opt = {
+                margin:       [0.15, 0.15, 0.15, 0.15],
+                filename:     pdfFileName,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { 
+                    scale: 2, 
+                    useCORS: true, 
+                    allowTaint: true,
+                    logging: false,
+                    scrollX: 0,
+                    scrollY: 0
+                },
+                jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+
+            try {
+                const worker = html2pdf().set(opt).from(tempContainer);
+                const pdfBlob = await worker.output('blob');
+                const pdfBlobUrl = URL.createObjectURL(pdfBlob);
+
+                // Save PDF file locally
+                await worker.save();
+
+                // Open blob URL for print preview
+                const printWin = window.open(pdfBlobUrl, '_blank');
+                if (!printWin) {
+                    showToast("PDF saved to downloads. Pop-up blocked for print preview.", "info");
+                }
+            } finally {
+                // Safely remove temporary container from DOM
+                if (tempContainer && tempContainer.parentNode) {
+                    tempContainer.parentNode.removeChild(tempContainer);
+                }
             }
         }
 
         /* ==========================================================================
-           7. LOCAL STORAGE & RESET PROCEDURE
+           8. LOCAL STORAGE HISTORY & RESET LOGIC
            ========================================================================== */
         function resetFormPostSubmit() {
             itemStates = {};
-            CHECKLIST_ITEMS.forEach((_, idx) => {
-                itemStates[idx + 1] = { status: null, comment: '' };
-            });
             renderChecklist();
 
             photoData = {};
@@ -1146,7 +1297,7 @@
             initDateTime();
 
             clearSignature();
-            // Note: Technician Name `#tech-name` remains intact!
+            // Note: Technician Name `#tech-name` is explicitly preserved!
         }
 
         function confirmResetForm() {
@@ -1165,7 +1316,7 @@
                 unitSerial,
                 fileName,
                 dateStr: new Date(dateStr || Date.now()).toLocaleString(),
-                itemCount: 15,
+                itemCount: getActiveChecklistItems().length,
                 photoCount: Object.keys(photoData).length
             };
 
@@ -1198,15 +1349,15 @@
                 card.innerHTML = `
                     <div>
                         <div class="flex items-center gap-2">
-                            <span class="font-bold text-slate-900 dark:text-white text-sm">${item.soNumber}</span>
-                            <span class="text-[10px] bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 font-semibold px-2 py-0.5 rounded-full">${item.unitSerial}</span>
+                            <span class="font-bold text-slate-900 dark:text-white text-sm">${escapeHtml(item.soNumber)}</span>
+                            <span class="text-[10px] bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 font-semibold px-2 py-0.5 rounded-full">${escapeHtml(item.unitSerial)}</span>
                         </div>
                         <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                            <i class="fa-solid fa-user-gear mr-1"></i>${item.techName} • ${item.dateStr}
+                            <i class="fa-solid fa-user-gear mr-1"></i>${escapeHtml(item.techName)} • ${item.dateStr}
                         </p>
                     </div>
                     <div class="text-right">
-                        <span class="text-xs font-mono font-medium text-emerald-600 dark:text-emerald-400 block">${item.fileName}</span>
+                        <span class="text-xs font-mono font-medium text-emerald-600 dark:text-emerald-400 block">${escapeHtml(item.fileName)}</span>
                         <span class="text-[10px] text-slate-400">${item.photoCount}/8 Photos</span>
                     </div>
                 `;
@@ -1227,7 +1378,7 @@
         }
 
         /* ==========================================================================
-           8. THEME & TOAST UTILITIES
+           9. THEME & TOAST UTILITIES
            ========================================================================== */
         function toggleDarkMode() {
             document.documentElement.classList.toggle('dark');
@@ -1248,6 +1399,7 @@
 
         function updateThemeIcon() {
             const icon = document.getElementById('theme-toggle-icon');
+            if (!icon) return;
             if (document.documentElement.classList.contains('dark')) {
                 icon.className = 'fa-solid fa-sun text-yellow-400 text-lg';
             } else {
@@ -1257,8 +1409,9 @@
 
         function showToast(message, type = 'info') {
             const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
+            if (!container) return;
 
+            const toast = document.createElement('div');
             let icon = 'fa-circle-info text-blue-400';
             let bg = 'bg-slate-900 text-white border-slate-700';
 
@@ -1271,7 +1424,7 @@
             toast.className = `flex items-center space-x-3 px-4 py-3 rounded-xl border shadow-xl text-xs sm:text-sm font-medium transform transition-all duration-300 translate-y-2 opacity-0 ${bg}`;
             toast.innerHTML = `
                 <i class="fa-solid ${icon} text-lg"></i>
-                <span>${message}</span>
+                <span>${escapeHtml(message)}</span>
             `;
 
             container.appendChild(toast);
@@ -1284,6 +1437,16 @@
                 toast.classList.add('opacity-0', 'translate-y-2');
                 setTimeout(() => toast.remove(), 300);
             }, 3500);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
         }
     </script>
 </body>
