@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inline Quality Checks - Lowe's</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            500: '#1e40af',
+                            600: '#1d4ed8',
+                            700: '#1e3a8a',
+                            800: '#0f2942',
+                            900: '#0a192f'
+                        },
+                        lowes: {
+                            blue: '#004990',
+                            navy: '#00205b',
+                            accent: '#0072ce',
+                            light: '#f4f7fa'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome 6 CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- html2pdf.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- Canvas Confetti CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        /* Custom scrollbars for tablet */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.05);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0,0,0,0.2);
+            border-radius: 4px;
+        }
+
+        /* Signature Canvas styling */
+        .sig-canvas {
+            touch-action: none;
+            background-color: #ffffff;
+            cursor: crosshair;
+        }
+
+        /* Photo slot 2in x 2in dimension guide */
+        .photo-box-2in {
+            width: 2in;
+            height: 2in;
+            object-fit: cover;
+        }
+
+        /* Strictly formatted PDF Printable Layout Container */
+        #pdf-letter-sheet {
+            width: 8.5in;
+            min-height: 11in;
+            max-height: 11in;
+            padding: 0.35in;
+            box-sizing: border-box;
+            background: #ffffff;
+            color: #111827;
+            font-size: 10.5pt;
+            line-height: 1.25;
+            overflow: hidden;
+            position: absolute;
+            left: -9999px;
+            top: -9999px;
+        }
+
+        .pdf-grid-2in {
+            display: grid;
+            grid-template-columns: repeat(4, 2in);
+            gap: 0.12in;
+            justify-content: center;
+        }
+
+        .pdf-photo-cell {
+            width: 2in;
+            height: 2in;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+            background: #f8fafc;
+        }
+
+        .pdf-photo-cell img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .pdf-photo-label {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 32, 91, 0.85);
+            color: #ffffff;
+            font-size: 6.5pt;
+            font-weight: 600;
+            padding: 2px 4px;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Pulse animation for active camera stream */
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+        .recording-pulse {
+            animation: pulse-ring 2s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-200 antialiased pb-16">
+
+    <!-- Top Navigation Header -->
+    <header class="sticky top-0 z-30 bg-lowes-navy dark:bg-slate-950 text-white shadow-md border-b border-blue-900/50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-white/10 p-2 rounded-lg flex items-center justify-center">
+                    <i class="fa-solid font-bold fa-clipboard-check text-blue-300 text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg sm:text-xl font-bold tracking-tight text-white leading-tight">Inline Quality Checks</h1>
+                    <p class="text-xs text-blue-200 font-medium">Lowe's Dedicated Mobile Inspection Platform</p>
+                </div>
+            </div>
+
+         
+
+                <!-- History Drawer Trigger -->
+                <button type="button" onclick="openHistoryModal()" 
+                    class="inline-flex items-center space-x-1.5 bg-blue-800/80 hover:bg-blue-700 text-blue-100 text-xs sm:text-sm font-medium px-3 py-2 rounded-lg border border-blue-600/50 active:scale-95 transition-all">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    <span class="hidden md:inline">History</span>
+                </button>
+
+                <!-- Dark Mode Toggle -->
+                <button type="button" onclick="toggleDarkMode()" 
+                    class="p-2 rounded-lg bg-blue-900/50 text-blue-200 hover:text-white hover:bg-blue-800/80 transition-colors">
+                    <i id="theme-toggle-icon" class="fa-solid fa-moon text-lg"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="max-w-5xl mx-auto px-3 sm:px-6 pt-4 sm:pt-6">
+
+        <!-- Form Card Container -->
+        <form id="qc-form" onsubmit="handleFormSubmit(event)" class="space-y-6">
+
+            <!-- Card 1: Inspection & General Info -->
+            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 sm:p-6 transition-all">
+                <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-3 mb-4">
+                    <h2 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <i class="fa-solid fa-id-card text-lowes-accent"></i>
+                        General Information
+                    </h2>
+                    <span class="text-xs bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 font-semibold px-2.5 py-1 rounded-full">
+                        Tablet Entry
+                    </span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+                    <!-- Technician Name (Persistent) -->
+                    <div>
+                        <label for="tech-name" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                            Technician / Tester <span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                <i class="fa-solid fa-user-gear"></i>
+                            </span>
+                            <input type="text" id="tech-name" required placeholder="e.g. Kartikkumar Patel" 
+                                oninput="saveTechNamePersistent()"
+                                class="w-full pl-9 pr-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-lowes-accent focus:border-transparent text-sm sm:text-base transition-all">
+                        </div>
+                        <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-1">Saved automatically for future checks</p>
+                    </div>
+
+                    <!-- SO Number -->
+                    <div>
+                        <label for="so-number" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                            SO Number <span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                <i class="fa-solid fa-hashtag"></i>
+                            </span>
+                            <input type="text" id="so-number" required placeholder="e.g. SO12345" 
+                                class="w-full pl-9 pr-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-lowes-accent focus:border-transparent text-sm sm:text-base uppercase transition-all">
+                        </div>
+                        <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-1">Used for PDF filename format</p>
+                    </div>
+
+                    <!-- Unit / Serial Number -->
+                    <div>
+                        <label for="unit-serial" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                            Unit / Serial # <span class="text-slate-400 font-normal">(Optional)</span>
+                        </label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                <i class="fa-solid fa-barcode"></i>
+                            </span>
+                            <input type="text" id="unit-serial" placeholder="e.g. LOWES-2026-99" 
+                                class="w-full pl-9 pr-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-lowes-accent focus:border-transparent text-sm sm:text-base transition-all">
+                        </div>
+                    </div>
+
+                    <!-- Date & Time -->
+                    <div>
+                        <label for="check-date" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                            Inspection Date & Time
+                        </label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                <i class="fa-solid fa-calendar-day"></i>
+                            </span>
+                            <input type="datetime-local" id="check-date" 
+                                class="w-full pl-9 pr-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-lowes-accent focus:border-transparent text-xs sm:text-sm transition-all">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 2: 15 Quality Checklist Items -->
+            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 sm:p-6 transition-all">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-3 mb-4 gap-2">
+                    <div>
+                        <h2 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            <i class="fa-solid fa-list-check text-emerald-500"></i>
+                            Inline Quality Checklist (15 Standard Items)
+                        </h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Tap status buttons to evaluate each requirement</p>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <span id="checklist-progress" class="text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-3 py-1.5 rounded-lg">
+                            0 / 15 Passed
+                        </span>
+                        <button type="button" onclick="passAllItems()" 
+                            class="sm:hidden text-xs bg-emerald-600 text-white font-semibold px-3 py-1.5 rounded-lg active:scale-95">
+                            <i class="fa-solid fa-check-double mr-1"></i> Pass All
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Checklist Table / List Grid -->
+                <div id="checklist-container" class="space-y-3 sm:space-y-3.5">
+                    <!-- Dynamic rendering via JS -->
+                </div>
+            </div>
+
+            <!-- Card 3: 8 Photo Camera & Capture Section -->
+            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 sm:p-6 transition-all">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-3 mb-4 gap-2">
+                    <div>
+                        <h2 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            <i class="fa-solid fa-camera text-blue-500"></i>
+                            Required Photos (8 Photos Grid)
+                        </h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Capture or upload photos for each designated section</p>
+                    </div>
+
+                    <div class="flex items-center space-x-2">
+                        <div class="bg-blue-50 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-800/60 rounded-xl px-3 py-1.5 text-xs font-bold text-blue-700 dark:text-blue-300 flex items-center gap-1.5">
+                            <i class="fa-solid fa-images"></i>
+                            <span id="photo-progress-badge">0 / 8 Captured</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hidden file inputs for direct camera upload fallback -->
+                <div id="file-input-container" class="hidden"></div>
+
+                <!-- 8 Photo Slots Grid (Responsive layout) -->
+                <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4" id="photo-grid">
+                    <!-- Photo cards injected dynamically by JS -->
+                </div>
+            </div>
+
+            <!-- Card 4: Digital Signature Sign-Off -->
+            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 sm:p-6 transition-all">
+                <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-3 mb-4">
+                    <div>
+                        <h2 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            <i class="fa-solid fa-file-signature text-purple-500"></i>
+                            Technician Digital Sign-off
+                        </h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Draw signature below to authorize quality inspection</p>
+                    </div>
+
+                    <button type="button" onclick="clearSignature()" 
+                        class="text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 bg-slate-100 dark:bg-slate-700 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1">
+                        <i class="fa-solid fa-eraser"></i>
+                        Clear Signature
+                    </button>
+                </div>
+
+                <div class="relative bg-slate-50 dark:bg-slate-900 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl overflow-hidden touch-none">
+                    <canvas id="sig-canvas" class="sig-canvas w-full h-36 sm:h-44 block"></canvas>
+                    <div id="sig-placeholder" class="absolute inset-0 pointer-events-none flex items-center justify-center text-slate-400 dark:text-slate-600 text-sm font-medium">
+                        <i class="fa-solid fa-pen-nib mr-2 opacity-60"></i> Sign Here with Finger or Stylus
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Action Footer -->
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+                <p class="text-xs text-slate-500 dark:text-slate-400 text-center sm:text-left">
+                    Submitting will generate PDF file <strong class="text-slate-700 dark:text-slate-200">[SO Number]_[Technician Name].pdf</strong>, store it in local storage, open print preview, and reset form.
+                </p>
+
+                <div class="flex items-center gap-3 w-full sm:w-auto">
+                    <button type="button" onclick="confirmResetForm()" 
+                        class="w-1/3 sm:w-auto px-4 py-3 border border-slate-300 dark:border-slate-600 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-sm rounded-xl transition-all active:scale-95">
+                        Reset
+                    </button>
+
+                    <button type="submit" id="btn-submit"
+                        class="w-2/3 sm:w-auto flex-1 sm:flex-none px-6 py-3.5 bg-gradient-to-r from-lowes-blue to-lowes-navy hover:from-blue-700 hover:to-blue-900 text-white font-bold text-sm sm:text-base rounded-xl shadow-lg hover:shadow-blue-500/25 active:scale-95 transition-all flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-file-pdf text-red-400"></i>
+                        <span>Submit & Generate PDF</span>
+                    </button>
+                </div>
+            </div>
+
+        </form>
+    </main>
+
+    <!-- Camera Modal (Live getUserMedia stream) -->
+    <div id="camera-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-3 sm:p-6">
+        <div class="bg-slate-900 rounded-2xl w-full max-w-lg border border-slate-800 shadow-2xl overflow-hidden flex flex-col">
+            <!-- Modal Header -->
+            <div class="px-4 py-3 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <span class="w-2.5 h-2.5 bg-red-500 rounded-full recording-pulse"></span>
+                    <h3 id="camera-modal-title" class="text-sm font-bold text-white">Capture Photo Slot 1</h3>
+                </div>
+                <button type="button" onclick="closeCameraModal()" class="text-slate-400 hover:text-white p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Video Stream Container -->
+            <div class="relative bg-black flex-1 min-h-[280px] sm:min-h-[340px] flex items-center justify-center overflow-hidden">
+                <video id="camera-video" autoplay playsinline class="w-full h-full object-cover"></video>
+                <canvas id="camera-canvas" class="hidden"></canvas>
+                
+                <!-- Camera Overlay Target Frame -->
+                <div class="absolute inset-0 border-2 border-white/20 pointer-events-none flex items-center justify-center">
+                    <div class="w-52 h-52 border-2 border-dashed border-emerald-400/70 rounded-lg"></div>
+                </div>
+            </div>
+
+            <!-- Modal Controls -->
+            <div class="p-4 bg-slate-950 border-t border-slate-800 flex items-center justify-between">
+                <button type="button" id="btn-switch-cam" onclick="switchCameraFacing()" 
+                    class="p-3 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl transition-colors">
+                    <i class="fa-solid fa-camera-rotate text-lg"></i>
+                </button>
+
+                <!-- Snapshot Capture Button -->
+                <button type="button" onclick="takeSnapshotFromStream()" 
+                    class="w-16 h-16 bg-white border-4 border-slate-300 rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform">
+                    <div class="w-12 h-12 bg-red-600 rounded-full"></div>
+                </button>
+
+                <button type="button" onclick="closeCameraModal()" 
+                    class="px-3 py-2 text-xs font-medium text-slate-400 hover:text-white">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- History Modal -->
+    <div id="history-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-3 sm:p-6">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-2xl border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col max-h-[85vh]">
+            <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-clock-rotate-left text-blue-500 text-lg"></i>
+                    <h3 class="font-bold text-slate-900 dark:text-white text-base">Inspection History Log</h3>
+                </div>
+                <button type="button" onclick="closeHistoryModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="p-4 overflow-y-auto flex-1 space-y-3" id="history-list">
+                <!-- History Items dynamically populated -->
+            </div>
+
+            <div class="p-3 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900 rounded-b-2xl">
+                <button type="button" onclick="clearAllHistory()" class="text-xs text-red-600 hover:text-red-700 font-semibold">
+                    <i class="fa-solid fa-trash-can mr-1"></i> Clear Local Storage History
+                </button>
+                <button type="button" onclick="closeHistoryModal()" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold rounded-lg">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- PDF PRINTABLE SHEET (Strictly engineered for 1 Letter-size page: 8.5" x 11") -->
+    <div id="pdf-letter-sheet">
+        <!-- Header Section -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #00205b; padding-bottom: 6px; margin-bottom: 8px;">
+            <div>
+                <h1 style="font-size: 14pt; font-weight: 800; color: #00205b; margin: 0; text-transform: uppercase;">Inline Quality Checks</h1>
+                <p style="font-size: 8.5pt; color: #0072ce; font-weight: 700; margin: 2px 0 0 0;">Lowe's Quality Assurance Sign-Off Report</p>
+            </div>
+            <div style="text-align: right; font-size: 8pt; color: #334155;">
+                <div><strong style="color: #0f172a;">Date/Time:</strong> <span id="pdf-val-date"></span></div>
+                <div><strong style="color: #0f172a;">Overall Result:</strong> <span id="pdf-val-overall" style="color: #16a34a; font-weight: 700;">PASSED</span></div>
+            </div>
+        </div>
+
+        <!-- Info Grid Box -->
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; background-color: #f1f5f9; padding: 6px 8px; border-radius: 4px; border: 1px solid #cbd5e1; margin-bottom: 8px; font-size: 8pt;">
+            <div><strong style="color: #475569;">SO Number:</strong> <span id="pdf-val-so" style="font-weight: 700; color: #0f172a;"></span></div>
+            <div><strong style="color: #475569;">Technician / Tester:</strong> <span id="pdf-val-tech" style="font-weight: 700; color: #0f172a;"></span></div>
+            <div><strong style="color: #475569;">Unit / Serial #:</strong> <span id="pdf-val-unit" style="font-weight: 600; color: #0f172a;">N/A</span></div>
+        </div>
+
+        <!-- Checklist 15 items in 2-column table layout -->
+        <div style="margin-bottom: 8px;">
+            <div style="font-size: 8.5pt; font-weight: 700; color: #00205b; margin-bottom: 4px; border-bottom: 1px solid #e2e8f0; padding-bottom: 2px;">
+                Quality Inspection Items (15 Items Checklist)
+            </div>
+            <div id="pdf-checklist-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 3px 8px; font-size: 7pt; line-height: 1.15;">
+                <!-- Populated dynamically -->
+            </div>
+        </div>
+
+        <!-- 8 Photos Section (4 Columns x 2 Rows of 2"x2" Square Boxes) -->
+        <div style="margin-bottom: 8px;">
+            <div style="font-size: 8.5pt; font-weight: 700; color: #00205b; margin-bottom: 4px; border-bottom: 1px solid #e2e8f0; padding-bottom: 2px;">
+                Inspection Photo Evidence (8 Photos - 2" x 2" Boxes)
+            </div>
+            <div id="pdf-photos-container" class="pdf-grid-2in">
+                <!-- 8 photo boxes generated dynamically -->
+            </div>
+        </div>
+
+        <!-- Signature & Footer Signoff -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; border-top: 1px solid #cbd5e1; pt: 4px; margin-top: 4px;">
+            <div style="font-size: 7.5pt; color: #64748b;">
+                <p style="margin: 0;">Verified and inspected according to Lowe's Inline Quality Standards.</p>
+                <p style="margin: 2px 0 0 0;">Report generated automatically via Mobile Quality Web App.</p>
+            </div>
+            <div style="text-align: center; width: 1.8in;">
+                <div style="height: 0.45in; border-bottom: 1.5px dashed #94a3b8; display: flex; align-items: center; justify-content: center;">
+                    <img id="pdf-val-sig" src="" style="max-height: 0.4in; max-width: 1.7in; object-fit: contain; display: none;" alt="Signature">
+                </div>
+                <div style="font-size: 7pt; color: #334155; font-weight: 600; margin-top: 2px;">Technician Signature</div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        /* ==========================================================================
+           1. CONSTANTS & DATA STRUCTURES
+           ========================================================================== */
+        const CHECKLIST_ITEMS = [
+            "Doors and stickers are torqued and aligned.",
+            "Shelves and retractors are installed properly.",
+            "The bottom door lock is functional.",
+            "C type cables light is working.",
+            "Check all service drawer power connections are secured.",
+            "Check all CAN connections.",
+            "All drawers and alfies are getting power.",
+            "All alfies are configured.",
+            "Check control door lock.",
+            "Devices are getting power( Screen, barcode, nuc, router)",
+            "All wires are labeled and properly managed.",
+            "Power labels for AC Input.",
+            "Grommet installed in cable entry.",
+            "The screen is flush with the door.",
+            "Camera filler and Signifi logo backer are installed."
+        ];
+
+        const PHOTO_SLOTS = [
+            { id: 1, title: "Photo 1: Front View", caption: "Front Door Alignment & Torqued" },
+            { id: 2, title: "Photo 2: Lock", caption: "Bottom & Control Door Locks" },
+            { id: 3, title: "Photo 3: Shelves", caption: "Shelves & Retractors Setup" },
+            { id: 4, title: "Photo 4: Power", caption: "Service Drawer Power & Cables" },
+            { id: 5, title: "Photo 5: CAN & Wires", caption: "CAN Connections & Wire Labels" },
+            { id: 6, title: "Photo 6: Alfies/NUC", caption: "Alfies, Router, Screen Power" },
+            { id: 7, title: "Photo 7: AC / Grommet", caption: "AC Power Labels & Cable Entry" },
+            { id: 8, title: "Photo 8: Final Unit", caption: "Screen Flush & Signifi Backer" }
+        ];
+
+        // Global State
+        let itemStates = {}; // { 1: { status: 'pass'|'fail'|'na', comment: '' } }
+        let photoData = {};  // { 1: base64DataString }
+        let activePhotoSlotIndex = null;
+        let mediaStream = null;
+        let currentFacingMode = 'environment';
+        let isDrawingSig = false;
+        let sigCanvas, sigCtx;
+
+        /* ==========================================================================
+           2. INITIALIZATION
+           ========================================================================== */
+        window.addEventListener('DOMContentLoaded', () => {
+            initDateTime();
+            loadPersistentTechName();
+            renderChecklist();
+            renderPhotoSlots();
+            initSignatureCanvas();
+            checkThemePreference();
+
+            // Resize canvas context on window resize
+            window.addEventListener('resize', resizeCanvas);
+        });
+
+        // Auto Populate Current Local Date/Time
+        function initDateTime() {
+            const dateInput = document.getElementById('check-date');
+            const now = new Date();
+            // Format YYYY-MM-DDTHH:MM
+            const localIso = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
+            dateInput.value = localIso;
+        }
+
+        // Local Storage Tech Name Handler
+        function loadPersistentTechName() {
+            const savedName = localStorage.getItem('lowes_qc_tech_name');
+            if (savedName) {
+                document.getElementById('tech-name').value = savedName;
+            }
+        }
+
+        function saveTechNamePersistent() {
+            const val = document.getElementById('tech-name').value;
+            localStorage.setItem('lowes_qc_tech_name', val);
+        }
+
+        /* ==========================================================================
+           3. CHECKLIST LOGIC & RENDERING
+           ========================================================================== */
+        function renderChecklist() {
+            const container = document.getElementById('checklist-container');
+            container.innerHTML = '';
+
+            CHECKLIST_ITEMS.forEach((itemText, idx) => {
+                const itemNum = idx + 1;
+                if (!itemStates[itemNum]) {
+                    itemStates[itemNum] = { status: null, comment: '' };
+                }
+
+                const card = document.createElement('div');
+                card.className = "bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/80 rounded-xl p-3 sm:p-4 transition-all";
+                card.id = `item-card-${itemNum}`;
+
+                const currentStatus = itemStates[itemNum].status;
+
+                card.innerHTML = `
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                        <!-- Item Title & Description -->
+                        <div class="flex items-start space-x-3 flex-1">
+                            <span class="flex-shrink-0 w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs flex items-center justify-center mt-0.5">
+                                ${itemNum}
+                            </span>
+                            <div class="flex-1">
+                                <p class="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100 leading-snug">
+                                    ${itemText}
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- 3-Way Status Buttons -->
+                        <div class="flex items-center space-x-1.5 sm:space-x-2 self-end md:self-auto">
+                            <!-- PASS -->
+                            <button type="button" onclick="setChecklistStatus(${itemNum}, 'pass')"
+                                class="px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95 ${
+                                    currentStatus === 'pass' 
+                                    ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 ring-2 ring-emerald-500' 
+                                    : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-slate-600 hover:border-emerald-500'
+                                }">
+                                <i class="fa-solid fa-circle-check"></i>
+                                <span>Pass</span>
+                            </button>
+
+                            <!-- FAIL -->
+                            <button type="button" onclick="setChecklistStatus(${itemNum}, 'fail')"
+                                class="px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95 ${
+                                    currentStatus === 'fail' 
+                                    ? 'bg-red-600 text-white shadow-md shadow-red-600/30 ring-2 ring-red-500' 
+                                    : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-slate-600 hover:border-red-500'
+                                }">
+                                <i class="fa-solid fa-circle-xmark"></i>
+                                <span>Fail</span>
+                            </button>
+
+                            <!-- N/A -->
+                            <button type="button" onclick="setChecklistStatus(${itemNum}, 'na')"
+                                class="px-3 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1 active:scale-95 ${
+                                    currentStatus === 'na' 
+                                    ? 'bg-slate-600 text-white shadow-md ring-2 ring-slate-500' 
+                                    : 'bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-300 dark:border-slate-600 hover:border-slate-400'
+                                }">
+                                <span>N/A</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Comment input field (visible or expanding) -->
+                    <div class="mt-2.5 pt-2 border-t border-slate-200/60 dark:border-slate-800 flex items-center space-x-2">
+                        <i class="fa-regular fa-comment text-slate-400 text-xs"></i>
+                        <input type="text" value="${itemStates[itemNum].comment || ''}" 
+                            placeholder="Add notes / defect description (optional)..."
+                            oninput="setChecklistComment(${itemNum}, this.value)"
+                            class="w-full bg-transparent text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none">
+                    </div>
+                `;
+
+                container.appendChild(card);
+            });
+
+            updateChecklistProgress();
+        }
+
+        function setChecklistStatus(itemNum, status) {
+            itemStates[itemNum].status = status;
+            renderChecklist();
+        }
+
+        function setChecklistComment(itemNum, commentText) {
+            if (itemStates[itemNum]) {
+                itemStates[itemNum].comment = commentText;
+            }
+        }
+
+        function passAllItems() {
+            CHECKLIST_ITEMS.forEach((_, idx) => {
+                itemStates[idx + 1].status = 'pass';
+            });
+            renderChecklist();
+            showToast("All 15 checklist items set to Passed!", "success");
+        }
+
+        function updateChecklistProgress() {
+            let passedCount = 0;
+            Object.values(itemStates).forEach(val => {
+                if (val.status === 'pass' || val.status === 'na') passedCount++;
+            });
+            const badge = document.getElementById('checklist-progress');
+            if (badge) {
+                badge.innerText = `${passedCount} / 15 Checked`;
+                if (passedCount === 15) {
+                    badge.className = "text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/40 px-3 py-1.5 rounded-lg";
+                } else {
+                    badge.className = "text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-3 py-1.5 rounded-lg";
+                }
+            }
+        }
+
+        /* ==========================================================================
+           4. 8 PHOTO CAMERA & CAPTURE LOGIC
+           ========================================================================== */
+        function renderPhotoSlots() {
+            const photoGrid = document.getElementById('photo-grid');
+            const fileContainer = document.getElementById('file-input-container');
+            photoGrid.innerHTML = '';
+            fileContainer.innerHTML = '';
+
+            let capturedCount = 0;
+
+            PHOTO_SLOTS.forEach(slot => {
+                const slotId = slot.id;
+                const hasImage = !!photoData[slotId];
+                if (hasImage) capturedCount++;
+
+                // Build hidden file input for direct upload fallback
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'file';
+                hiddenInput.accept = 'image/*';
+                hiddenInput.capture = 'environment';
+                hiddenInput.id = `file-input-${slotId}`;
+                hiddenInput.onchange = (e) => handleFileUpload(e, slotId);
+                fileContainer.appendChild(hiddenInput);
+
+                // Slot UI Card
+                const card = document.createElement('div');
+                card.className = `relative rounded-xl border p-2.5 sm:p-3 flex flex-col justify-between transition-all ${
+                    hasImage 
+                    ? 'bg-blue-50/50 dark:bg-blue-950/20 border-blue-400 dark:border-blue-700' 
+                    : 'bg-slate-50 dark:bg-slate-900/60 border-slate-200 dark:border-slate-700'
+                }`;
+
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-center justify-between mb-1.5">
+                            <span class="text-[11px] font-bold text-slate-800 dark:text-slate-200 truncate">
+                                ${slot.title}
+                            </span>
+                            ${hasImage 
+                                ? '<span class="text-xs text-emerald-600 dark:text-emerald-400"><i class="fa-solid fa-circle-check"></i></span>'
+                                : '<span class="text-[10px] text-slate-400 font-mono">Slot ' + slotId + '</span>'
+                            }
+                        </div>
+                        <p class="text-[10px] text-slate-500 dark:text-slate-400 mb-2 truncate" title="${slot.caption}">${slot.caption}</p>
+
+                        <!-- Thumbnail Preview Area -->
+                        <div class="w-full aspect-square rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center relative group">
+                            ${hasImage 
+                                ? `<img src="${photoData[slotId]}" class="w-full h-full object-cover" alt="Slot ${slotId}">
+                                   <button type="button" onclick="clearPhotoSlot(${slotId})" title="Remove Photo" class="absolute top-1.5 right-1.5 bg-red-600/90 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs shadow hover:bg-red-700 transition-colors">
+                                       <i class="fa-solid fa-xmark"></i>
+                                   </button>`
+                                : `<div class="text-center p-2">
+                                       <i class="fa-solid fa-camera text-slate-300 dark:text-slate-600 text-2xl mb-1"></i>
+                                       <p class="text-[10px] text-slate-400">2" x 2" PDF Box</p>
+                                   </div>`
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Action buttons -->
+                    <div class="grid grid-cols-2 gap-1.5 mt-2.5">
+                        <button type="button" onclick="openCameraModal(${slotId})" 
+                            class="px-2 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1 active:scale-95 transition-all">
+                            <i class="fa-solid fa-camera text-[10px]"></i>
+                            <span>Cam</span>
+                        </button>
+
+                        <button type="button" onclick="triggerFileInput(${slotId})" 
+                            class="px-2 py-1.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1 active:scale-95 transition-all">
+                            <i class="fa-solid fa-upload text-[10px]"></i>
+                            <span>File</span>
+                        </button>
+                    </div>
+                `;
+
+                photoGrid.appendChild(card);
+            });
+
+            // Update photo progress badge
+            const badge = document.getElementById('photo-progress-badge');
+            if (badge) {
+                badge.innerText = `${capturedCount} / 8 Captured`;
+            }
+        }
+
+        function triggerFileInput(slotId) {
+            const input = document.getElementById(`file-input-${slotId}`);
+            if (input) input.click();
+        }
+
+        function handleFileUpload(event, slotId) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                compressAndStorePhoto(e.target.result, slotId);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearPhotoSlot(slotId) {
+            delete photoData[slotId];
+            renderPhotoSlots();
+            showToast(`Photo Slot ${slotId} cleared`, 'info');
+        }
+
+        /* Live Camera Stream Modal Logic */
+        async function openCameraModal(slotId) {
+            activePhotoSlotIndex = slotId;
+            const slot = PHOTO_SLOTS.find(s => s.id === slotId);
+            document.getElementById('camera-modal-title').innerText = `Capture ${slot ? slot.title : 'Photo Slot ' + slotId}`;
+
+            const modal = document.getElementById('camera-modal');
+            modal.classList.remove('hidden');
+
+            await startCameraStream();
+        }
+
+        async function startCameraStream() {
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+            }
+
+            const video = document.getElementById('camera-video');
+            try {
+                mediaStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: currentFacingMode, width: { ideal: 1280 }, height: { ideal: 720 } },
+                    audio: false
+                });
+                video.srcObject = mediaStream;
+            } catch (err) {
+                console.warn("Camera getUserMedia error, falling back to file input:", err);
+                closeCameraModal();
+                showToast("Live camera stream unavailable. Opening file/camera picker instead.", "info");
+                triggerFileInput(activePhotoSlotIndex);
+            }
+        }
+
+        function switchCameraFacing() {
+            currentFacingMode = (currentFacingMode === 'environment') ? 'user' : 'environment';
+            startCameraStream();
+        }
+
+        function closeCameraModal() {
+            const modal = document.getElementById('camera-modal');
+            modal.classList.add('hidden');
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+                mediaStream = null;
+            }
+        }
+
+        function takeSnapshotFromStream() {
+            if (!mediaStream || activePhotoSlotIndex === null) return;
+
+            const video = document.getElementById('camera-video');
+            const canvas = document.getElementById('camera-canvas');
+            const ctx = canvas.getContext('2d');
+
+            canvas.width = video.videoWidth || 640;
+            canvas.height = video.videoHeight || 480;
+
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+            compressAndStorePhoto(dataUrl, activePhotoSlotIndex);
+            closeCameraModal();
+            showToast(`Photo Captured for Slot ${activePhotoSlotIndex}!`, "success");
+        }
+
+        // Compress image data to keep local storage lightweight
+        function compressAndStorePhoto(base64Str, slotId) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const MAX_WIDTH = 600;
+                const MAX_HEIGHT = 600;
+                let width = img.width;
+                let height = img.height;
+
+                if (width > height) {
+                    if (width > MAX_WIDTH) {
+                        height *= MAX_WIDTH / width;
+                        width = MAX_WIDTH;
+                    }
+                } else {
+                    if (height > MAX_HEIGHT) {
+                        width *= MAX_HEIGHT / height;
+                        height = MAX_HEIGHT;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                photoData[slotId] = canvas.toDataURL('image/jpeg', 0.8);
+                renderPhotoSlots();
+            };
+            img.src = base64Str;
+        }
+
+        /* ==========================================================================
+           5. DIGITAL SIGNATURE CANVAS LOGIC
+           ========================================================================== */
+        function initSignatureCanvas() {
+            sigCanvas = document.getElementById('sig-canvas');
+            sigCtx = sigCanvas.getContext('2d');
+            resizeCanvas();
+
+            // Pointer & Touch Events
+            sigCanvas.addEventListener('mousedown', startDrawingSig);
+            sigCanvas.addEventListener('mousemove', drawSig);
+            sigCanvas.addEventListener('mouseup', stopDrawingSig);
+            sigCanvas.addEventListener('mouseleave', stopDrawingSig);
+
+            sigCanvas.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                const touch = e.touches[0];
+                const mouseEvent = new MouseEvent('mousedown', {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY
+                });
+                sigCanvas.dispatchEvent(mouseEvent);
+            }, { passive: false });
+
+            sigCanvas.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                const touch = e.touches[0];
+                const mouseEvent = new MouseEvent('mousemove', {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY
+                });
+                sigCanvas.dispatchEvent(mouseEvent);
+            }, { passive: false });
+
+            sigCanvas.addEventListener('touchend', (e) => {
+                const mouseEvent = new MouseEvent('mouseup', {});
+                sigCanvas.dispatchEvent(mouseEvent);
+            });
+        }
+
+        function resizeCanvas() {
+            if (!sigCanvas) return;
+            const rect = sigCanvas.getBoundingClientRect();
+            sigCanvas.width = rect.width;
+            sigCanvas.height = rect.height;
+            clearSignature();
+        }
+
+        function startDrawingSig(e) {
+            isDrawingSig = true;
+            document.getElementById('sig-placeholder').style.display = 'none';
+            const rect = sigCanvas.getBoundingClientRect();
+            sigCtx.beginPath();
+            sigCtx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+            sigCtx.strokeStyle = '#00205b';
+            sigCtx.lineWidth = 2.5;
+            sigCtx.lineCap = 'round';
+            sigCtx.lineJoin = 'round';
+        }
+
+        function drawSig(e) {
+            if (!isDrawingSig) return;
+            const rect = sigCanvas.getBoundingClientRect();
+            sigCtx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+            sigCtx.stroke();
+        }
+
+        function stopDrawingSig() {
+            isDrawingSig = false;
+        }
+
+        function clearSignature() {
+            if (!sigCtx || !sigCanvas) return;
+            sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+            document.getElementById('sig-placeholder').style.display = 'flex';
+        }
+
+        function isSignatureEmpty() {
+            if (!sigCanvas) return true;
+            const blank = document.createElement('canvas');
+            blank.width = sigCanvas.width;
+            blank.height = sigCanvas.height;
+            return sigCanvas.toDataURL() === blank.toDataURL();
+        }
+
+        /* ==========================================================================
+           6. PDF GENERATION & PRINT preview LOGIC
+           ========================================================================== */
+        async function handleFormSubmit(event) {
+            event.preventDefault();
+
+            const techName = document.getElementById('tech-name').value.trim();
+            const soNumber = document.getElementById('so-number').value.trim();
+            const dateStr = document.getElementById('check-date').value;
+            const unitSerial = document.getElementById('unit-serial').value.trim() || 'N/A';
+
+            if (!soNumber || !techName) {
+                showToast("Please fill in Technician Name and SO Number.", "error");
+                return;
+            }
+
+            // Check signature
+            if (isSignatureEmpty()) {
+                showToast("Technician digital signature is required before submitting.", "error");
+                return;
+            }
+
+            // Check if photos taken
+            const photoCount = Object.keys(photoData).length;
+            if (photoCount < 8) {
+                const proceed = confirm(`Only ${photoCount} of 8 photos captured. Proceed with PDF generation?`);
+                if (!proceed) return;
+            }
+
+            const submitBtn = document.getElementById('btn-submit');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Generating PDF...';
+
+            try {
+                // Populate PDF Hidden Sheet
+                populatePDFSheet(techName, soNumber, unitSerial, dateStr);
+
+                // Prepare filename format strictly: [SO Number]_[Technician Name].pdf
+                const sanitizedSO = soNumber.replace(/[^a-zA-Z0-9]/g, '');
+                const sanitizedTech = techName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+                const fileName = `${sanitizedSO}_${sanitizedTech}.pdf`;
+
+                // Generate PDF Blob using html2pdf
+                const element = document.getElementById('pdf-letter-sheet');
+                
+                const opt = {
+                    margin:       0,
+                    filename:     fileName,
+                    image:        { type: 'jpeg', quality: 0.98 },
+                    html2canvas:  { scale: 2, useCORS: true, logging: false },
+                    jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+                };
+
+                // Generate worker
+                const worker = html2pdf().set(opt).from(element);
+                
+                // Get PDF Data URI & Save
+                const pdfBlob = await worker.output('blob');
+                const pdfUrl = URL.createObjectURL(pdfBlob);
+
+                // Trigger Download
+                worker.save();
+
+                // Save to LocalStorage History
+                saveToHistoryLog(soNumber, techName, unitSerial, fileName, dateStr);
+
+                // Open PDF for viewing / printing
+                openPDFForPrint(pdfUrl, fileName);
+
+                // Confetti celebration
+                if (typeof confetti === 'function') {
+                    confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+                }
+
+                showToast("Checklist Submitted & PDF Generated Successfully!", "success");
+
+                // Post-Submission Reset (Keep Technician Name)
+                resetFormPostSubmit();
+
+            } catch (err) {
+                console.error("PDF Generation error:", err);
+                showToast("Error generating PDF: " + err.message, "error");
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fa-solid fa-file-pdf text-red-400 mr-2"></i> Submit & Generate PDF';
+            }
+        }
+
+        function populatePDFSheet(techName, soNumber, unitSerial, dateStr) {
+            document.getElementById('pdf-val-so').innerText = soNumber;
+            document.getElementById('pdf-val-tech').innerText = techName;
+            document.getElementById('pdf-val-unit').innerText = unitSerial;
+            
+            // Format date nicely
+            const d = new Date(dateStr || Date.now());
+            document.getElementById('pdf-val-date').innerText = d.toLocaleString();
+
+            // Populate Checklist items in PDF
+            const pdfChecklist = document.getElementById('pdf-checklist-grid');
+            pdfChecklist.innerHTML = '';
+
+            let hasFails = false;
+
+            CHECKLIST_ITEMS.forEach((itemText, idx) => {
+                const itemNum = idx + 1;
+                const state = itemStates[itemNum] || { status: 'pass', comment: '' };
+                if (state.status === 'fail') hasFails = true;
+
+                let badgeHtml = '<span style="color: #16a34a; font-weight:700;">[✓ PASS]</span>';
+                if (state.status === 'fail') badgeHtml = '<span style="color: #dc2626; font-weight:700;">[✗ FAIL]</span>';
+                if (state.status === 'na') badgeHtml = '<span style="color: #64748b; font-weight:700;">[N/A]</span>';
+
+                const cell = document.createElement('div');
+                cell.style.cssText = "padding: 2px 0; border-bottom: 0.5px solid #f1f5f9; display: flex; justify-content: space-between; align-items: flex-start;";
+                
+                const commentSuffix = state.comment ? ` <i style="color:#64748b;">(${state.comment})</i>` : '';
+
+                cell.innerHTML = `
+                    <div style="flex:1; padding-right: 4px;">
+                        <strong style="color:#0f172a;">${itemNum}.</strong> ${itemText}${commentSuffix}
+                    </div>
+                    <div style="flex-shrink:0;">${badgeHtml}</div>
+                `;
+                pdfChecklist.appendChild(cell);
+            });
+
+            // Set Overall status badge
+            const overallElem = document.getElementById('pdf-val-overall');
+            if (hasFails) {
+                overallElem.innerText = "DEFECTS DETECTED";
+                overallElem.style.color = "#dc2626";
+            } else {
+                overallElem.innerText = "PASSED";
+                overallElem.style.color = "#16a34a";
+            }
+
+            // Populate 8 Photos in strictly 2" x 2" boxes grid
+            const pdfPhotosDiv = document.getElementById('pdf-photos-container');
+            pdfPhotosDiv.innerHTML = '';
+
+            PHOTO_SLOTS.forEach(slot => {
+                const slotId = slot.id;
+                const imgSrc = photoData[slotId];
+
+                const cell = document.createElement('div');
+                cell.className = 'pdf-photo-cell';
+
+                if (imgSrc) {
+                    cell.innerHTML = `
+                        <img src="${imgSrc}" alt="Photo ${slotId}">
+                        <div class="pdf-photo-label">${slot.caption}</div>
+                    `;
+                } else {
+                    cell.innerHTML = `
+                        <div style="height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; font-size:7pt; text-align:center; padding:4px;">
+                            <span>No Photo</span>
+                            <span style="font-size:5.5pt; color:#cbd5e1;">Slot ${slotId}</span>
+                        </div>
+                        <div class="pdf-photo-label">${slot.caption}</div>
+                    `;
+                }
+                pdfPhotosDiv.appendChild(cell);
+            });
+
+            // Populate signature image
+            const sigImg = document.getElementById('pdf-val-sig');
+            if (sigCanvas && !isSignatureEmpty()) {
+                sigImg.src = sigCanvas.toDataURL();
+                sigImg.style.display = 'block';
+            } else {
+                sigImg.style.display = 'none';
+            }
+        }
+
+        function openPDFForPrint(pdfBlobUrl, fileName) {
+            // Open window with iframe for immediate print capability
+            const printWin = window.open(pdfBlobUrl, '_blank');
+            if (!printWin) {
+                showToast("Pop-up blocked. PDF downloaded directly.", "info");
+            }
+        }
+
+        /* ==========================================================================
+           7. POST-SUBMISSION RESET & LOCAL STORAGE HISTORY
+           ========================================================================== */
+        function resetFormPostSubmit() {
+            // Reset checklist states
+            itemStates = {};
+            CHECKLIST_ITEMS.forEach((_, idx) => {
+                itemStates[idx + 1] = { status: null, comment: '' };
+            });
+            renderChecklist();
+
+            // Clear photos
+            photoData = {};
+            renderPhotoSlots();
+
+            // Clear inputs EXCEPT tech name
+            document.getElementById('so-number').value = '';
+            document.getElementById('unit-serial').value = '';
+            initDateTime();
+
+            // Clear signature
+            clearSignature();
+
+            // Note: Technician name field `#tech-name` remains populated!
+        }
+
+        function confirmResetForm() {
+            if (confirm("Are you sure you want to reset all form fields? Technician name will be preserved.")) {
+                resetFormPostSubmit();
+                showToast("Form reset successfully.", "info");
+            }
+        }
+
+        /* History Storage Management */
+        function saveToHistoryLog(soNumber, techName, unitSerial, fileName, dateStr) {
+            let history = JSON.parse(localStorage.getItem('lowes_qc_history') || '[]');
+            const record = {
+                id: Date.now(),
+                soNumber,
+                techName,
+                unitSerial,
+                fileName,
+                dateStr: new Date(dateStr || Date.now()).toLocaleString(),
+                itemCount: 15,
+                photoCount: Object.keys(photoData).length
+            };
+
+            history.unshift(record); // Add to top
+            if (history.length > 30) history.pop(); // Keep last 30
+            localStorage.setItem('lowes_qc_history', JSON.stringify(history));
+        }
+
+        function openHistoryModal() {
+            const modal = document.getElementById('history-modal');
+            const list = document.getElementById('history-list');
+            modal.classList.remove('hidden');
+
+            const history = JSON.parse(localStorage.getItem('lowes_qc_history') || '[]');
+
+            if (history.length === 0) {
+                list.innerHTML = `
+                    <div class="text-center py-8 text-slate-400">
+                        <i class="fa-solid fa-folder-open text-3xl mb-2 opacity-50"></i>
+                        <p class="text-sm">No saved inspection history found in local storage.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            list.innerHTML = '';
+            history.forEach(item => {
+                const card = document.createElement('div');
+                card.className = "p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl flex items-center justify-between";
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold text-slate-900 dark:text-white text-sm">${item.soNumber}</span>
+                            <span class="text-[10px] bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 font-semibold px-2 py-0.5 rounded-full">${item.unitSerial}</span>
+                        </div>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                            <i class="fa-solid fa-user-gear mr-1"></i>${item.techName} • ${item.dateStr}
+                        </p>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-xs font-mono font-medium text-emerald-600 dark:text-emerald-400 block">${item.fileName}</span>
+                        <span class="text-[10px] text-slate-400">${item.photoCount}/8 Photos Attached</span>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        function closeHistoryModal() {
+            document.getElementById('history-modal').classList.add('hidden');
+        }
+
+        function clearAllHistory() {
+            if (confirm("Clear all local inspection history logs?")) {
+                localStorage.removeItem('lowes_qc_history');
+                openHistoryModal();
+                showToast("History cleared.", "info");
+            }
+        }
+
+        /* ==========================================================================
+           8. UTILITIES & THEME TOGGLE
+           ========================================================================== */
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+            const isDark = document.documentElement.classList.contains('dark');
+            localStorage.setItem('lowes_qc_theme', isDark ? 'dark' : 'light');
+            updateThemeIcon();
+        }
+
+        function checkThemePreference() {
+            const savedTheme = localStorage.getItem('lowes_qc_theme');
+            if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+            updateThemeIcon();
+        }
+
+        function updateThemeIcon() {
+            const icon = document.getElementById('theme-toggle-icon');
+            if (document.documentElement.classList.contains('dark')) {
+                icon.className = 'fa-solid fa-sun text-yellow-400 text-lg';
+            } else {
+                icon.className = 'fa-solid fa-moon text-lg';
+            }
+        }
+
+        // Lightweight Toast Alert system
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+
+            let icon = 'fa-circle-info text-blue-400';
+            let bg = 'bg-slate-900 text-white border-slate-700';
+
+            if (type === 'success') {
+                icon = 'fa-circle-check text-emerald-400';
+            } else if (type === 'error') {
+                icon = 'fa-circle-exclamation text-red-400';
+            }
+
+            toast.className = `flex items-center space-x-3 px-4 py-3 rounded-xl border shadow-xl text-xs sm:text-sm font-medium transform transition-all duration-300 translate-y-2 opacity-0 ${bg}`;
+            toast.innerHTML = `
+                <i class="fa-solid ${icon} text-lg"></i>
+                <span>${message}</span>
+            `;
+
+            container.appendChild(toast);
+
+            // Animate in
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            });
+
+            // Remove after 3.5s
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+    </script>
+</body>
+</html>
